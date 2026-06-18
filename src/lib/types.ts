@@ -90,6 +90,11 @@ export interface ListingDraft {
   location: {
     address: string;
     building: string;
+    city: string;
+    state: string;
+    zip: string;
+    lat: number | null;
+    lng: number | null;
   };
 
   // Step 4
@@ -154,7 +159,7 @@ export const DEFAULT_DRAFT: ListingDraft = {
     accessibility: [],
     what_to_bring: "",
   },
-  location: { address: "", building: "" },
+  location: { address: "", building: "", city: "", state: "", zip: "", lat: null, lng: null },
   pricing: {
     basePrice: 4500, // $45.00
     variations: [],

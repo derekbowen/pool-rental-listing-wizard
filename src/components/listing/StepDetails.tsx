@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useListing } from "@/contexts/ListingContext";
-import { AI_LOADING_STEPS } from "@/lib/mockData";
 import { MOCK_AI_RESULTS } from "@/lib/mockData";
 import { analyzeListingPhotos, type AIListingResult } from "@/lib/ai";
+import AddressAutocomplete, { LocationMapPreview } from "./AddressAutocomplete";
 import {
   SPACE_FEATURES,
   SAFETY_FEATURES,
@@ -45,62 +45,100 @@ const POLICY_ICONS: Record<string, React.ElementType> = {
 };
 
 // ---------- AI Loading Animation ----------
-function AILoadingState({ onComplete }: { onComplete: () => void }) {
+const AI_PROGRESS_MESSAGES = [
+  { text: "Uploading your photos...", icon: "📸" },
+  { text: "Analyzing pool features...", icon: "🏊" },
+  { text: "Detecting amenities...", icon: "🔍" },
+  { text: "Estimating pool dimensions...", icon: "📐" },
+  { text: "Identifying safety features...", icon: "🛟" },
+  { text: "Checking water quality clues...", icon: "💧" },
+  { text: "Writing your description...", icon: "✍️" },
+  { text: "Polishing the details...", icon: "✨" },
+  { text: "Almost there...", icon: "🎯" },
+  { text: "Just a few more seconds...", icon: "⏳" },
+  { text: "Wrapping things up...", icon: "🎁" },
+];
+
+function AILoadingState({ status }: { status: "loading" | "done" | "error" }) {
+  const [elapsed, setElapsed] = useState(0);
+  const [messageIdx, setMessageIdx] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   useEffect(() => {
-    AI_LOADING_STEPS.forEach((_, idx) => {
-      setTimeout(() => {
-        setCompletedSteps((prev) => [...prev, idx]);
-        if (idx === AI_LOADING_STEPS.length - 1) {
-          setTimeout(onComplete, 600);
-        }
-      }, (idx + 1) * 800);
-    });
-  }, [onComplete]);
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIdx((i) => {
+        const next = i + 1;
+        setCompletedSteps((prev) => [...prev, i]);
+        return next < AI_PROGRESS_MESSAGES.length ? next : i;
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  const timeStr = minutes > 0
+    ? `${minutes}:${seconds.toString().padStart(2, "0")}`
+    : `${seconds}s`;
+
+  const current = AI_PROGRESS_MESSAGES[messageIdx];
+  const progressPct = status === "done"
+    ? 100
+    : Math.min(95, (messageIdx / AI_PROGRESS_MESSAGES.length) * 100 + (elapsed % 3) * 2);
 
   return (
-    <div className="flex flex-col items-center py-16 space-y-8">
-      {/* Water ripple animation */}
-      <div className="relative w-24 h-24">
-        <div className="absolute inset-0 rounded-full bg-cyan-100 animate-ping opacity-20" />
-        <div
-          className="absolute inset-3 rounded-full bg-cyan-200 animate-ping opacity-30"
-          style={{ animationDelay: "0.3s" }}
-        />
-        <div
-          className="absolute inset-6 rounded-full bg-cyan-300 animate-ping opacity-40"
-          style={{ animationDelay: "0.6s" }}
-        />
+    <div className="flex flex-col items-center py-12 space-y-6">
+      {/* Animated pool ring */}
+      <div className="relative w-28 h-28">
+        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#e0f2fe" strokeWidth="8" />
+          <circle
+            cx="60" cy="60" r="52" fill="none"
+            stroke="#0891b2" strokeWidth="8" strokeLinecap="round"
+            strokeDasharray={`${progressPct * 3.27} 327`}
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-4xl">🏊</span>
+          <span className="text-3xl" key={messageIdx}>
+            {status === "done" ? "✅" : current.icon}
+          </span>
         </div>
       </div>
 
-      <div className="space-y-3 w-full max-w-sm">
-        {AI_LOADING_STEPS.map((step, idx) => (
+      {/* Timer */}
+      <div className="text-center">
+        <div className="text-4xl font-mono font-bold text-cyan-700 tabular-nums">
+          {timeStr}
+        </div>
+        <p className="mt-1 text-sm text-slate-400">
+          {status === "done" ? "Complete!" : "This usually takes 15–30 seconds"}
+        </p>
+      </div>
+
+      {/* Current step message */}
+      <div className="bg-slate-50 rounded-xl px-6 py-3 min-w-[280px] text-center">
+        <p className="text-sm font-medium text-slate-600 animate-pulse">
+          {status === "done" ? "Done! Applying results..." : current.text}
+        </p>
+      </div>
+
+      {/* Completed steps */}
+      <div className="space-y-2 w-full max-w-sm">
+        {AI_PROGRESS_MESSAGES.slice(0, messageIdx).map((step, idx) => (
           <div
-            key={step}
-            className={cn(
-              "flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300",
-              completedSteps.includes(idx)
-                ? "bg-emerald-50 text-emerald-700"
-                : "text-slate-400",
-            )}
+            key={idx}
+            className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 transition-all duration-300"
           >
-            <div
-              className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300",
-                completedSteps.includes(idx)
-                  ? "bg-emerald-500"
-                  : "border-2 border-slate-200",
-              )}
-            >
-              {completedSteps.includes(idx) && (
-                <Check className="w-3 h-3 text-white" />
-              )}
+            <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <Check className="w-2.5 h-2.5 text-white" />
             </div>
-            <span className="text-sm font-medium">{step}</span>
+            <span className="text-xs font-medium">{step.text}</span>
           </div>
         ))}
       </div>
@@ -286,25 +324,41 @@ export default function StepDetails() {
     setAiCompleted(true);
   }, [updateDraft, updatePublicData, setAiCompleted]);
 
+  const [aiStatus, setAiStatus] = useState<"loading" | "done" | "error">("loading");
+  const [aiStarted, setAiStarted] = useState(false);
+
   const runAiAnalysis = useCallback(async () => {
     setAiError(null);
+    setAiStatus("loading");
+    const minDelay = new Promise((r) => setTimeout(r, 2500));
+
     if (draft.images.length === 0) {
-      applyResults(MOCK_AI_RESULTS as AIListingResult);
+      await minDelay;
+      setAiStatus("done");
+      setTimeout(() => applyResults(MOCK_AI_RESULTS as AIListingResult), 600);
       return;
     }
     try {
-      const results = await analyzeListingPhotos(
-        draft.images,
-        draft.title,
-        draft.category,
-      );
-      applyResults(results);
+      const [results] = await Promise.all([
+        analyzeListingPhotos(draft.images, draft.title, draft.category),
+        minDelay,
+      ]);
+      setAiStatus("done");
+      setTimeout(() => applyResults(results), 600);
     } catch (err: any) {
       console.error("AI analysis failed, using mock data:", err);
       setAiError(err.message ?? "AI analysis failed");
-      applyResults(MOCK_AI_RESULTS as AIListingResult);
+      setAiStatus("error");
+      setTimeout(() => applyResults(MOCK_AI_RESULTS as AIListingResult), 600);
     }
   }, [draft.images, draft.title, draft.category, applyResults]);
+
+  useEffect(() => {
+    if (!aiCompleted && !aiStarted) {
+      setAiStarted(true);
+      runAiAnalysis();
+    }
+  }, [aiCompleted, aiStarted, runAiAnalysis]);
 
   if (!aiCompleted) {
     return (
@@ -317,7 +371,7 @@ export default function StepDetails() {
             Our AI is analyzing your photos to fill in the details
           </p>
         </div>
-        <AILoadingState onComplete={runAiAnalysis} />
+        <AILoadingState status={aiStatus} />
       </div>
     );
   }
@@ -364,14 +418,17 @@ export default function StepDetails() {
               <Pencil className="w-3 h-3" />
               {editingDescription ? "Done" : "Edit"}
             </button>
-            <button
-              onClick={() => {
-                setAiCompleted(false);
-              }}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
-            >
-              <RefreshCw className="w-3 h-3" /> Regenerate
-            </button>
+            {draft.images.length > 0 && (
+              <button
+                onClick={() => {
+                  setAiStarted(false);
+                  setAiCompleted(false);
+                }}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
+              >
+                <RefreshCw className="w-3 h-3" /> Regenerate from photos
+              </button>
+            )}
           </div>
         </div>
         {editingDescription ? (
@@ -581,20 +638,19 @@ export default function StepDetails() {
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">
           Location
         </h2>
-        <div className="flex items-center gap-2 px-4 py-3 bg-cyan-50 rounded-xl">
-          <MapPin className="w-5 h-5 text-cyan-600 flex-shrink-0" />
-          <span className="text-sm text-cyan-900 font-medium">
-            {draft.location.address
-              ? `We detected your location as: ${draft.location.address}`
-              : "Enter your address below"}
-          </span>
-        </div>
-        <input
-          type="text"
+        <AddressAutocomplete
           value={draft.location.address}
-          onChange={(e) => updateLocation({ address: e.target.value })}
-          placeholder="Confirm or update your address"
-          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm"
+          onRawChange={(v) => updateLocation({ address: v })}
+          onChange={(result) =>
+            updateLocation({
+              address: result.address,
+              city: result.city,
+              state: result.state,
+              zip: result.zip,
+              lat: result.lat,
+              lng: result.lng,
+            })
+          }
         />
         <input
           type="text"
@@ -603,6 +659,14 @@ export default function StepDetails() {
           placeholder="Apt, suite, building # (optional)"
           className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm"
         />
+        {draft.location.lat && (
+          <LocationMapPreview
+            lat={draft.location.lat}
+            lng={draft.location.lng}
+            city={draft.location.city}
+            state={draft.location.state}
+          />
+        )}
       </section>
 
       {/* Navigation */}

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useListing } from "@/contexts/ListingContext";
-import { cn } from "@/lib/utils";
+import { cn, to12h } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -607,7 +607,7 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
                     >
                       <p className="text-xs font-bold text-cyan-700">{d.day.slice(0, 3)}</p>
                       <p className="text-[10px] text-cyan-600 mt-0.5">
-                        {d.start}–{d.end}
+                        {to12h(d.start)}–{to12h(d.end)}
                       </p>
                     </div>
                   ))}
