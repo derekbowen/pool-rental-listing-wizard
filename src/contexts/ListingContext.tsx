@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { ListingDraft } from "@/lib/types";
 import { DEFAULT_DRAFT } from "@/lib/types";
 
+type Page = "wizard" | "product" | "cards";
+
 interface ListingContextValue {
   step: number;
   setStep: (s: number) => void;
@@ -15,6 +17,8 @@ interface ListingContextValue {
   updateAvailability: (partial: Partial<ListingDraft["availability"]>) => void;
   aiCompleted: boolean;
   setAiCompleted: (v: boolean) => void;
+  page: Page;
+  setPage: (p: Page) => void;
 }
 
 const ListingContext = createContext<ListingContextValue | null>(null);
@@ -47,7 +51,8 @@ export function ListingProvider({ children }: { children: React.ReactNode }) {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<ListingDraft>(loadDraft);
   const [aiCompleted, setAiCompleted] = useState(false);
-  const autoSaveTimer = useRef<ReturnType<typeof setInterval>>();
+  const [page, setPage] = useState<Page>("wizard");
+  const autoSaveTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const next = useCallback(() => setStep((s) => Math.min(s + 1, 6)), []);
   const back = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
@@ -137,6 +142,8 @@ export function ListingProvider({ children }: { children: React.ReactNode }) {
         updateAvailability,
         aiCompleted,
         setAiCompleted,
+        page,
+        setPage,
       }}
     >
       {children}

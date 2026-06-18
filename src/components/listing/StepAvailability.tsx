@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useListing } from "@/contexts/ListingContext";
 import { cn } from "@/lib/utils";
-import type { DayOfWeek, DaySchedule } from "@/lib/types";
+import type { DayOfWeek, DaySchedule, DateOverride } from "@/lib/types";
 import {
   CalendarDays,
   Clock,
@@ -10,30 +10,22 @@ import {
   Timer,
   ShieldCheck,
   X,
+  DollarSign,
+  Ban,
+  Zap,
 } from "lucide-react";
 
 const DAYS: DayOfWeek[] = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
 ];
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: "Mon",
-  tuesday: "Tue",
-  wednesday: "Wed",
-  thursday: "Thu",
-  friday: "Fri",
-  saturday: "Sat",
-  sunday: "Sun",
+  monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu",
+  friday: "Fri", saturday: "Sat", sunday: "Sun",
 };
 
 const TIME_OPTIONS = Array.from({ length: 37 }, (_, i) => {
-  const hour = Math.floor(i / 2) + 6; // 6:00 AM to 12:00 AM (midnight)
+  const hour = Math.floor(i / 2) + 6;
   const min = i % 2 === 0 ? "00" : "30";
   const h24 = `${String(hour).padStart(2, "0")}:${min}`;
   const ampm = hour < 12 ? "AM" : hour === 24 ? "AM" : "PM";
@@ -41,13 +33,215 @@ const TIME_OPTIONS = Array.from({ length: 37 }, (_, i) => {
   return { value: h24, label: `${displayHour}:${min} ${ampm}` };
 });
 
-// ---- Mini Calendar ----
-function MiniCalendar({
+// ---- Date Popover (Swimply-style bottom sheet for a tapped date) ----
+function DatePopover({
+  dateISO,
+  override,
+  basePrice,
+  onUpdate,
+  onClose,
+}: {
+  dateISO: string;
+  override: DateOverride | undefined;
+  basePrice: number;
+  onUpdate: (dateISO: string, ov: DateOverride | null) => void;
+  onClose: () => void;
+}) {
+  const dateLabel = new Date(dateISO + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+  });
+
+  const isBlocked = override?.blocked ?? false;
+  const customPrice = override?.pricePerHour ?? null;
+  const [priceInput, setPriceInput] = useState(
+    customPrice !== null ? String(customPrice / 100) : "",
+  );
+  const [note, setNote] = useState(override?.note ?? "");
+
+  const handleSetPrice = () => {
+    const cents = Math.round(parseFloat(priceInput) * 100);
+    if (!isNaN(cents) && cents > 0) {
+      onUpdate(dateISO, { ...override, pricePerHour: cents, blocked: false });
+    }
+  };
+
+  const handleBlock = () => {
+    onUpdate(dateISO, { ...override, blocked: true, pricePerHour: undefined });
+  };
+
+  const handleUnblock = () => {
+    const next: DateOverride = { ...override, blocked: false };
+    if (!next.pricePerHour && !next.note) {
+      onUpdate(dateISO, null);
+    } else {
+      onUpdate(dateISO, next);
+    }
+  };
+
+  const handleClearPrice = () => {
+    setPriceInput("");
+    const next: DateOverride = { ...override, pricePerHour: undefined };
+    if (!next.blocked && !next.note) {
+      onUpdate(dateISO, null);
+    } else {
+      onUpdate(dateISO, next);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-in fade-in duration-200">
+      <div
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Manage availability</h3>
+            <p className="text-sm text-slate-500">{dateLabel}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Block / Unblock */}
+          <div className="space-y-2">
+            {isBlocked ? (
+              <button
+                onClick={handleUnblock}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-red-200 bg-red-50 text-red-700 font-semibold transition-colors hover:bg-red-100"
+              >
+                <Ban className="w-5 h-5" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Blocked</p>
+                  <p className="text-xs font-normal text-red-500">
+                    Tap to unblock this date
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={handleBlock}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold transition-colors hover:border-red-300 hover:bg-red-50"
+              >
+                <Ban className="w-5 h-5 text-slate-400" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Block entire date</p>
+                  <p className="text-xs font-normal text-slate-400">
+                    No bookings allowed
+                  </p>
+                </div>
+              </button>
+            )}
+          </div>
+
+          {/* Custom price */}
+          {!isBlocked && (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <DollarSign className="w-4 h-4 text-cyan-600" />
+                Custom price for this date
+              </label>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder={String(basePrice / 100)}
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    className="w-full pl-7 pr-12 py-3 border border-slate-200 rounded-xl text-sm focus:border-cyan-500 outline-none"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                    /hr
+                  </span>
+                </div>
+                <button
+                  onClick={handleSetPrice}
+                  disabled={!priceInput || isNaN(parseFloat(priceInput))}
+                  className="px-4 py-3 bg-cyan-500 text-white rounded-xl font-semibold text-sm hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Set
+                </button>
+              </div>
+              {customPrice !== null && (
+                <div className="flex items-center justify-between px-3 py-2 bg-cyan-50 rounded-lg">
+                  <span className="text-xs text-cyan-700">
+                    Custom: <strong>${(customPrice / 100).toFixed(0)}/hr</strong>{" "}
+                    (base: ${(basePrice / 100).toFixed(0)}/hr)
+                  </span>
+                  <button
+                    onClick={handleClearPrice}
+                    className="text-xs text-cyan-600 hover:text-cyan-800 font-medium"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Note */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Note (optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Holiday pricing, maintenance..."
+              value={note}
+              onChange={(e) => {
+                setNote(e.target.value);
+                onUpdate(dateISO, {
+                  ...override,
+                  note: e.target.value || undefined,
+                });
+              }}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-cyan-500 outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Done */}
+        <div className="px-5 pb-5">
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Integrated Calendar ----
+function AvailabilityCalendar({
   blockedDates,
+  dateOverrides,
+  basePrice,
   onToggleDate,
+  onUpdateOverride,
+  onSelectDate,
 }: {
   blockedDates: string[];
+  dateOverrides: Record<string, DateOverride>;
+  basePrice: number;
   onToggleDate: (date: string) => void;
+  onUpdateOverride: (date: string, ov: DateOverride | null) => void;
+  onSelectDate: (date: string) => void;
 }) {
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date();
@@ -58,9 +252,8 @@ function MiniCalendar({
 
   const daysInMonth = useMemo(() => {
     const first = new Date(year, month, 1);
-    const startDay = first.getDay(); // 0=Sun
+    const startDay = first.getDay();
     const total = new Date(year, month + 1, 0).getDate();
-
     const cells: (number | null)[] = [];
     for (let i = 0; i < startDay; i++) cells.push(null);
     for (let d = 1; d <= total; d++) cells.push(d);
@@ -80,39 +273,24 @@ function MiniCalendar({
     return d.toISOString().split("T")[0];
   };
 
-  const prevMonth = () => {
+  const prevMonth = () =>
     setViewMonth((v) =>
-      v.month === 0
-        ? { year: v.year - 1, month: 11 }
-        : { ...v, month: v.month - 1 },
+      v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 },
     );
-  };
-
-  const nextMonth = () => {
+  const nextMonth = () =>
     setViewMonth((v) =>
-      v.month === 11
-        ? { year: v.year + 1, month: 0 }
-        : { ...v, month: v.month + 1 },
+      v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 },
     );
-  };
 
   return (
     <div className="space-y-3">
       {/* Month navigation */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={prevMonth}
-          className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
-        >
+        <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
           <ChevronLeft className="w-5 h-5 text-slate-500" />
         </button>
-        <span className="text-sm font-semibold text-slate-700">
-          {monthLabel}
-        </span>
-        <button
-          onClick={nextMonth}
-          className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
-        >
+        <span className="text-base font-bold text-slate-800">{monthLabel}</span>
+        <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
           <ChevronRight className="w-5 h-5 text-slate-500" />
         </button>
       </div>
@@ -120,7 +298,7 @@ function MiniCalendar({
       {/* Day headers */}
       <div className="grid grid-cols-7 text-center">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <span key={d} className="text-xs font-medium text-slate-400 py-1">
+          <span key={d} className="text-xs font-semibold text-slate-400 py-1">
             {d}
           </span>
         ))}
@@ -132,33 +310,62 @@ function MiniCalendar({
           if (day === null) return <div key={`blank-${i}`} />;
 
           const iso = toISO(day);
-          const isBlocked = blockedDates.includes(iso);
+          const isBlocked = blockedDates.includes(iso) || dateOverrides[iso]?.blocked;
+          const override = dateOverrides[iso];
+          const hasCustomPrice = override?.pricePerHour !== undefined && !isBlocked;
           const cellDate = new Date(year, month, day);
           const isPast = cellDate < today;
+          const isToday = cellDate.getTime() === today.getTime();
 
           return (
             <button
               key={iso}
-              onClick={() => !isPast && onToggleDate(iso)}
+              onClick={() => !isPast && onSelectDate(iso)}
               disabled={isPast}
               className={cn(
-                "w-full aspect-square rounded-lg text-sm font-medium transition-all duration-150 active:scale-90",
+                "relative w-full aspect-square rounded-xl text-sm font-medium transition-all duration-150 flex flex-col items-center justify-center gap-0.5",
                 isPast && "text-slate-200 cursor-not-allowed",
-                !isPast && !isBlocked && "text-slate-700 hover:bg-cyan-50",
-                !isPast && isBlocked && "bg-red-100 text-red-600 ring-1 ring-red-200",
+                isToday && !isBlocked && !hasCustomPrice && "ring-2 ring-cyan-400",
+                !isPast && !isBlocked && !hasCustomPrice && "text-slate-700 hover:bg-cyan-50",
+                !isPast && isBlocked && "bg-red-50 text-red-400 ring-1 ring-red-200",
+                !isPast && hasCustomPrice && "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
               )}
             >
-              {day}
+              <span className={cn("text-sm", isBlocked && "line-through")}>{day}</span>
+              {/* Price label under date number */}
+              {!isPast && hasCustomPrice && override?.pricePerHour && (
+                <span className="text-[9px] font-bold text-cyan-600 leading-none">
+                  ${(override.pricePerHour / 100).toFixed(0)}
+                </span>
+              )}
+              {!isPast && !hasCustomPrice && !isBlocked && (
+                <span className="text-[9px] text-slate-300 leading-none">
+                  ${(basePrice / 100).toFixed(0)}
+                </span>
+              )}
+              {!isPast && isBlocked && (
+                <Ban className="w-2.5 h-2.5 text-red-300" />
+              )}
             </button>
           );
         })}
       </div>
 
-      {blockedDates.length > 0 && (
-        <p className="text-xs text-slate-400 text-center">
-          {blockedDates.length} date{blockedDates.length > 1 ? "s" : ""} blocked
-        </p>
-      )}
+      {/* Legend */}
+      <div className="flex items-center gap-4 justify-center pt-1">
+        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span className="w-3 h-3 rounded bg-cyan-50 ring-1 ring-cyan-200" />
+          Custom price
+        </span>
+        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span className="w-3 h-3 rounded bg-red-50 ring-1 ring-red-200" />
+          Blocked
+        </span>
+        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span className="w-3 h-3 rounded ring-2 ring-cyan-400" />
+          Today
+        </span>
+      </div>
     </div>
   );
 }
@@ -169,6 +376,7 @@ function MiniCalendar({
 export default function StepAvailability() {
   const { draft, updateAvailability, next, back } = useListing();
   const { availability } = draft;
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // ---- Schedule helpers ----
   const toggleDay = (day: DayOfWeek) => {
@@ -177,63 +385,171 @@ export default function StepAvailability() {
     updateAvailability({ schedule: updated });
   };
 
-  const updateDayTime = (
-    day: DayOfWeek,
-    field: "startTime" | "endTime",
-    value: string,
-  ) => {
+  const updateDayTime = (day: DayOfWeek, field: "startTime" | "endTime", value: string) => {
     const updated = { ...availability.schedule };
     updated[day] = { ...updated[day], [field]: value };
     updateAvailability({ schedule: updated });
   };
 
-  // ---- Quick presets ----
   const applyPreset = (preset: "all" | "weekdays" | "weekends") => {
     const updated = { ...availability.schedule };
     for (const day of DAYS) {
       const isWeekend = day === "saturday" || day === "sunday";
       if (preset === "all") updated[day] = { ...updated[day], enabled: true };
-      else if (preset === "weekdays")
-        updated[day] = { ...updated[day], enabled: !isWeekend };
-      else if (preset === "weekends")
-        updated[day] = { ...updated[day], enabled: isWeekend };
+      else if (preset === "weekdays") updated[day] = { ...updated[day], enabled: !isWeekend };
+      else if (preset === "weekends") updated[day] = { ...updated[day], enabled: isWeekend };
     }
     updateAvailability({ schedule: updated });
   };
 
-  // ---- Blocked dates ----
-  const toggleBlockedDate = (iso: string) => {
-    const blocked = availability.blockedDates.includes(iso)
-      ? availability.blockedDates.filter((d) => d !== iso)
-      : [...availability.blockedDates, iso];
-    updateAvailability({ blockedDates: blocked });
-  };
+  // ---- Date overrides ----
+  const handleUpdateOverride = useCallback(
+    (dateISO: string, ov: DateOverride | null) => {
+      const overrides = { ...availability.dateOverrides };
+      if (ov === null) {
+        delete overrides[dateISO];
+      } else {
+        overrides[dateISO] = ov;
+      }
+      // Sync blockedDates array for backward compat
+      const blockedSet = new Set(availability.blockedDates);
+      if (ov?.blocked) {
+        blockedSet.add(dateISO);
+      } else {
+        blockedSet.delete(dateISO);
+      }
+      updateAvailability({
+        dateOverrides: overrides,
+        blockedDates: Array.from(blockedSet),
+      });
+    },
+    [availability, updateAvailability],
+  );
 
-  const removeBlockedDate = (iso: string) => {
-    updateAvailability({
-      blockedDates: availability.blockedDates.filter((d) => d !== iso),
-    });
-  };
+  const toggleBlockedDate = useCallback(
+    (iso: string) => {
+      const isBlocked = availability.blockedDates.includes(iso) || availability.dateOverrides[iso]?.blocked;
+      handleUpdateOverride(iso, isBlocked ? null : { blocked: true });
+    },
+    [availability, handleUpdateOverride],
+  );
+
+  // Summary counts
+  const blockedCount = availability.blockedDates.length;
+  const customPriceCount = Object.values(availability.dateOverrides).filter(
+    (o) => o.pricePerHour !== undefined && !o.blocked,
+  ).length;
 
   return (
     <div className="py-8 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">
-          Set your availability
-        </h1>
+        <h1 className="text-3xl font-bold text-cyan-900">Set your availability</h1>
         <p className="mt-2 text-slate-500">
-          Tell guests when they can book your space.
+          Manage your calendar, set custom daily pricing, and block dates.
         </p>
       </div>
 
-      {/* 5A: Weekly Schedule */}
+      {/* 5A: Integrated Calendar */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-cyan-600" />
+          <h2 className="text-lg font-bold text-slate-800">Availability Calendar</h2>
+        </div>
+        <p className="text-sm text-slate-500">
+          Tap any date to set custom pricing or block it out. Base rate:{" "}
+          <strong className="text-cyan-700">
+            ${(draft.pricing.basePrice / 100).toFixed(0)}/hr
+          </strong>
+        </p>
+
+        <div className="p-4 border border-slate-200 rounded-2xl bg-white">
+          <AvailabilityCalendar
+            blockedDates={availability.blockedDates}
+            dateOverrides={availability.dateOverrides}
+            basePrice={draft.pricing.basePrice}
+            onToggleDate={toggleBlockedDate}
+            onUpdateOverride={handleUpdateOverride}
+            onSelectDate={setSelectedDate}
+          />
+        </div>
+
+        {/* Summary chips */}
+        {(blockedCount > 0 || customPriceCount > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {blockedCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium">
+                <Ban className="w-3 h-3" />
+                {blockedCount} blocked date{blockedCount > 1 ? "s" : ""}
+              </span>
+            )}
+            {customPriceCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-cyan-600 rounded-full text-xs font-medium">
+                <DollarSign className="w-3 h-3" />
+                {customPriceCount} custom price{customPriceCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Overrides list */}
+        {Object.keys(availability.dateOverrides).length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Date overrides
+            </p>
+            <div className="space-y-1">
+              {Object.entries(availability.dateOverrides)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([iso, ov]) => (
+                  <div
+                    key={iso}
+                    className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      {ov.blocked ? (
+                        <Ban className="w-3.5 h-3.5 text-red-400" />
+                      ) : (
+                        <DollarSign className="w-3.5 h-3.5 text-cyan-500" />
+                      )}
+                      <span className="text-sm text-slate-700">
+                        {new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          weekday: "short",
+                        })}
+                      </span>
+                      {ov.blocked && (
+                        <span className="text-xs text-red-500 font-medium">Blocked</span>
+                      )}
+                      {ov.pricePerHour && !ov.blocked && (
+                        <span className="text-xs text-cyan-600 font-bold">
+                          ${(ov.pricePerHour / 100).toFixed(0)}/hr
+                        </span>
+                      )}
+                      {ov.note && (
+                        <span className="text-xs text-slate-400 italic">— {ov.note}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleUpdateOverride(iso, null)}
+                      className="text-slate-300 hover:text-red-400 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* 5B: Weekly Schedule */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-cyan-600" />
           <h2 className="text-lg font-bold text-slate-800">Weekly Schedule</h2>
         </div>
 
-        {/* Quick presets */}
         <div className="flex gap-2">
           {[
             { id: "all" as const, label: "Every Day" },
@@ -250,7 +566,6 @@ export default function StepAvailability() {
           ))}
         </div>
 
-        {/* Day rows */}
         <div className="space-y-2">
           {DAYS.map((day) => {
             const sched: DaySchedule = availability.schedule[day];
@@ -259,12 +574,9 @@ export default function StepAvailability() {
                 key={day}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200",
-                  sched.enabled
-                    ? "border-cyan-200 bg-cyan-50/50"
-                    : "border-slate-100 bg-slate-50/50",
+                  sched.enabled ? "border-cyan-200 bg-cyan-50/50" : "border-slate-100 bg-slate-50/50",
                 )}
               >
-                {/* Toggle */}
                 <button
                   onClick={() => toggleDay(day)}
                   className={cn(
@@ -275,7 +587,6 @@ export default function StepAvailability() {
                   {DAY_LABELS[day]}
                 </button>
 
-                {/* Toggle switch */}
                 <button
                   onClick={() => toggleDay(day)}
                   className={cn(
@@ -292,91 +603,35 @@ export default function StepAvailability() {
                   />
                 </button>
 
-                {/* Time selectors */}
                 {sched.enabled ? (
                   <div className="flex items-center gap-1 flex-1">
                     <select
                       value={sched.startTime}
-                      onChange={(e) =>
-                        updateDayTime(day, "startTime", e.target.value)
-                      }
+                      onChange={(e) => updateDayTime(day, "startTime", e.target.value)}
                       className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
                     >
                       {TIME_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
+                        <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
                     <span className="text-xs text-slate-400">to</span>
                     <select
                       value={sched.endTime}
-                      onChange={(e) =>
-                        updateDayTime(day, "endTime", e.target.value)
-                      }
+                      onChange={(e) => updateDayTime(day, "endTime", e.target.value)}
                       className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
                     >
                       {TIME_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
+                        <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-300 italic">
-                    Unavailable
-                  </span>
+                  <span className="text-xs text-slate-300 italic">Unavailable</span>
                 )}
               </div>
             );
           })}
         </div>
-      </section>
-
-      {/* 5B: Block Specific Dates */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-red-400" />
-          <h2 className="text-lg font-bold text-slate-800">
-            Block Specific Dates
-          </h2>
-        </div>
-        <p className="text-sm text-slate-500">
-          Tap dates when you're unavailable (vacation, maintenance, etc.)
-        </p>
-
-        <div className="p-4 border border-slate-200 rounded-xl">
-          <MiniCalendar
-            blockedDates={availability.blockedDates}
-            onToggleDate={toggleBlockedDate}
-          />
-        </div>
-
-        {/* Blocked dates chips */}
-        {availability.blockedDates.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {availability.blockedDates
-              .sort()
-              .map((iso) => (
-                <span
-                  key={iso}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-full text-xs font-medium"
-                >
-                  {new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                  <button
-                    onClick={() => removeBlockedDate(iso)}
-                    className="hover:text-red-800 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-          </div>
-        )}
       </section>
 
       {/* 5C: Booking Rules */}
@@ -387,91 +642,52 @@ export default function StepAvailability() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Min hours */}
           <div className="p-3 border border-slate-200 rounded-xl space-y-2">
             <div className="flex items-center gap-1.5">
               <Timer className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-600">
-                Min booking
-              </span>
+              <span className="text-xs font-semibold text-slate-600">Min booking</span>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() =>
-                  updateAvailability({
-                    minHours: Math.max(1, availability.minHours - 1),
-                  })
-                }
+                onClick={() => updateAvailability({ minHours: Math.max(1, availability.minHours - 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors font-bold"
-              >
-                -
-              </button>
-              <span className="text-lg font-bold text-slate-800 w-8 text-center">
-                {availability.minHours}
-              </span>
+              >-</button>
+              <span className="text-lg font-bold text-slate-800 w-8 text-center">{availability.minHours}</span>
               <button
-                onClick={() =>
-                  updateAvailability({
-                    minHours: Math.min(availability.maxHours, availability.minHours + 1),
-                  })
-                }
+                onClick={() => updateAvailability({ minHours: Math.min(availability.maxHours, availability.minHours + 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors font-bold"
-              >
-                +
-              </button>
+              >+</button>
               <span className="text-xs text-slate-400">hours</span>
             </div>
           </div>
 
-          {/* Max hours */}
           <div className="p-3 border border-slate-200 rounded-xl space-y-2">
             <div className="flex items-center gap-1.5">
               <Timer className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-600">
-                Max booking
-              </span>
+              <span className="text-xs font-semibold text-slate-600">Max booking</span>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() =>
-                  updateAvailability({
-                    maxHours: Math.max(availability.minHours, availability.maxHours - 1),
-                  })
-                }
+                onClick={() => updateAvailability({ maxHours: Math.max(availability.minHours, availability.maxHours - 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors font-bold"
-              >
-                -
-              </button>
-              <span className="text-lg font-bold text-slate-800 w-8 text-center">
-                {availability.maxHours}
-              </span>
+              >-</button>
+              <span className="text-lg font-bold text-slate-800 w-8 text-center">{availability.maxHours}</span>
               <button
-                onClick={() =>
-                  updateAvailability({
-                    maxHours: Math.min(24, availability.maxHours + 1),
-                  })
-                }
+                onClick={() => updateAvailability({ maxHours: Math.min(24, availability.maxHours + 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors font-bold"
-              >
-                +
-              </button>
+              >+</button>
               <span className="text-xs text-slate-400">hours</span>
             </div>
           </div>
 
-          {/* Buffer time */}
           <div className="p-3 border border-slate-200 rounded-xl space-y-2">
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-600">
-                Buffer between bookings
-              </span>
+              <span className="text-xs font-semibold text-slate-600">Buffer between bookings</span>
             </div>
             <select
               value={availability.bufferMinutes}
-              onChange={(e) =>
-                updateAvailability({ bufferMinutes: Number(e.target.value) })
-              }
+              onChange={(e) => updateAvailability({ bufferMinutes: Number(e.target.value) })}
               className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
             >
               <option value={0}>None</option>
@@ -482,21 +698,14 @@ export default function StepAvailability() {
             </select>
           </div>
 
-          {/* Advance notice */}
           <div className="p-3 border border-slate-200 rounded-xl space-y-2">
             <div className="flex items-center gap-1.5">
               <CalendarDays className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-600">
-                Advance notice
-              </span>
+              <span className="text-xs font-semibold text-slate-600">Advance notice</span>
             </div>
             <select
               value={availability.advanceNoticeDays}
-              onChange={(e) =>
-                updateAvailability({
-                  advanceNoticeDays: Number(e.target.value),
-                })
-              }
+              onChange={(e) => updateAvailability({ advanceNoticeDays: Number(e.target.value) })}
               className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
             >
               <option value={0}>Same day OK</option>
@@ -524,6 +733,17 @@ export default function StepAvailability() {
           Review & Publish →
         </button>
       </div>
+
+      {/* Date Popover */}
+      {selectedDate && (
+        <DatePopover
+          dateISO={selectedDate}
+          override={availability.dateOverrides[selectedDate]}
+          basePrice={draft.pricing.basePrice}
+          onUpdate={handleUpdateOverride}
+          onClose={() => setSelectedDate(null)}
+        />
+      )}
     </div>
   );
 }

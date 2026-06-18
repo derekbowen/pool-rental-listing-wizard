@@ -36,6 +36,13 @@ export interface DurationDiscount {
   discountPercent: number;
 }
 
+export interface DateOverride {
+  pricePerHour?: number; // cents — custom price for this date
+  blocked?: boolean;
+  blockedHours?: string[]; // e.g. ["09:00","09:30","10:00"] blocked time slots
+  note?: string;
+}
+
 export interface ListingDraft {
   // Step 1
   listingType: ListingTypeId;
@@ -100,6 +107,7 @@ export interface ListingDraft {
   availability: {
     schedule: Record<DayOfWeek, DaySchedule>;
     blockedDates: string[]; // ISO date strings "2026-03-15"
+    dateOverrides: Record<string, DateOverride>; // keyed by ISO date
     minHours: number;
     maxHours: number;
     bufferMinutes: number;
@@ -167,6 +175,7 @@ export const DEFAULT_DRAFT: ListingDraft = {
       sunday: { enabled: true, startTime: "09:00", endTime: "21:00" },
     },
     blockedDates: [],
+    dateOverrides: {},
     minHours: 2,
     maxHours: 8,
     bufferMinutes: 30,

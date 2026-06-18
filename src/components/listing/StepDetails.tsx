@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useListing } from "@/contexts/ListingContext";
-import { MOCK_AI_RESULTS, AI_LOADING_STEPS } from "@/lib/mockData";
+import { AI_LOADING_STEPS } from "@/lib/mockData";
+import { MOCK_AI_RESULTS } from "@/lib/mockData";
+import { analyzeListingPhotos, type AIListingResult } from "@/lib/ai";
 import {
   SPACE_FEATURES,
   SAFETY_FEATURES,
@@ -254,39 +256,56 @@ export default function StepDetails() {
     useListing();
   const [showPolicies, setShowPolicies] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
-  // TODO: Replace with API call — send draft.images to AI endpoint
-  const handleAiComplete = () => {
-    // Apply mock AI results to draft
-    updateDraft({ description: MOCK_AI_RESULTS.description });
+  const applyResults = useCallback((results: AIListingResult) => {
+    updateDraft({ description: results.description });
     updatePublicData({
-      space: MOCK_AI_RESULTS.space,
-      safety: MOCK_AI_RESULTS.safety,
-      outdoor_kitchen: MOCK_AI_RESULTS.outdoor_kitchen,
-      pool_depth: MOCK_AI_RESULTS.pool_depth,
-      water_type: MOCK_AI_RESULTS.water_type,
-      guestallowed: MOCK_AI_RESULTS.guestallowed,
-      squarefootage: MOCK_AI_RESULTS.squarefootage,
-      checkingin: MOCK_AI_RESULTS.checkingin,
-      privatespace: MOCK_AI_RESULTS.privatespace,
-      parking_size: MOCK_AI_RESULTS.parking_size,
-      restroompool: MOCK_AI_RESULTS.restroompool,
-      shower: MOCK_AI_RESULTS.shower,
-      shower_room: MOCK_AI_RESULTS.shower_room,
-      wifi: MOCK_AI_RESULTS.wifi,
-      disabilities: MOCK_AI_RESULTS.disabilities,
-      alcohol: MOCK_AI_RESULTS.alcohol,
-      smoking: MOCK_AI_RESULTS.smoking,
-      loud_music: MOCK_AI_RESULTS.loud_music,
-      nudity: MOCK_AI_RESULTS.nudity,
-      third_party_vendors: MOCK_AI_RESULTS.third_party_vendors,
-      security_camera: MOCK_AI_RESULTS.security_camera,
+      space: results.space,
+      safety: results.safety,
+      outdoor_kitchen: results.outdoor_kitchen,
+      pool_depth: results.pool_depth,
+      water_type: results.water_type,
+      guestallowed: results.guestallowed,
+      squarefootage: results.squarefootage,
+      checkingin: results.checkingin,
+      privatespace: results.privatespace,
+      parking_size: results.parking_size,
+      restroompool: results.restroompool,
+      shower: results.shower,
+      shower_room: results.shower_room,
+      wifi: results.wifi,
+      disabilities: results.disabilities,
+      alcohol: results.alcohol,
+      smoking: results.smoking,
+      loud_music: results.loud_music,
+      nudity: results.nudity,
+      third_party_vendors: results.third_party_vendors,
+      security_camera: results.security_camera,
     });
-    updateLocation({ address: "Los Angeles, CA" });
     setAiCompleted(true);
-  };
+  }, [updateDraft, updatePublicData, setAiCompleted]);
 
-  // Show loading animation if AI hasn't run yet
+  const runAiAnalysis = useCallback(async () => {
+    setAiError(null);
+    if (draft.images.length === 0) {
+      applyResults(MOCK_AI_RESULTS as AIListingResult);
+      return;
+    }
+    try {
+      const results = await analyzeListingPhotos(
+        draft.images,
+        draft.title,
+        draft.category,
+      );
+      applyResults(results);
+    } catch (err: any) {
+      console.error("AI analysis failed, using mock data:", err);
+      setAiError(err.message ?? "AI analysis failed");
+      applyResults(MOCK_AI_RESULTS as AIListingResult);
+    }
+  }, [draft.images, draft.title, draft.category, applyResults]);
+
   if (!aiCompleted) {
     return (
       <div className="py-8">
@@ -298,7 +317,7 @@ export default function StepDetails() {
             Our AI is analyzing your photos to fill in the details
           </p>
         </div>
-        <AILoadingState onComplete={handleAiComplete} />
+        <AILoadingState onComplete={runAiAnalysis} />
       </div>
     );
   }
@@ -325,6 +344,12 @@ export default function StepDetails() {
         </p>
       </div>
 
+      {aiError && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <span className="font-medium">AI fallback:</span> {aiError} — showing sample data instead. Edit below or tap Regenerate.
+        </div>
+      )}
+
       {/* Description */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
@@ -341,8 +366,7 @@ export default function StepDetails() {
             </button>
             <button
               onClick={() => {
-                // TODO: Replace with API call to regenerate
-                updateDraft({ description: MOCK_AI_RESULTS.description });
+                setAiCompleted(false);
               }}
               className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
             >

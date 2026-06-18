@@ -4,3 +4,7 @@ dist/
 *.local
 .DS_Store
 .claude/
+.env
+.env.local
+.env.*.local
+!.env.example

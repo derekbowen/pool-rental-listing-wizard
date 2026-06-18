@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useListing } from "@/contexts/ListingContext";
 import { cn } from "@/lib/utils";
+import { createListing } from "@/lib/sharetribe";
 import {
   Star,
   MapPin,
@@ -19,11 +20,14 @@ import {
 } from "lucide-react";
 
 // ---------- Celebration Modal ----------
-function CelebrationModal({ onClose }: { onClose: () => void }) {
+function CelebrationModal({ onClose, listingId }: { onClose: () => void; listingId?: string | null }) {
   const [copied, setCopied] = useState(false);
+  const listingUrl = listingId
+    ? `https://poolrentalnearme.com/l/${listingId}`
+    : "https://poolrentalnearme.com/l/your-listing";
 
   const handleCopy = () => {
-    navigator.clipboard.writeText("https://poolrentalnearme.com/l/your-listing");
+    navigator.clipboard.writeText(listingUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -49,7 +53,7 @@ function CelebrationModal({ onClose }: { onClose: () => void }) {
           <input
             type="text"
             readOnly
-            value="poolrentalnearme.com/l/your-listing"
+            value={listingUrl.replace("https://", "")}
             className="flex-1 text-sm text-slate-600 bg-transparent outline-none"
           />
           <button
@@ -141,15 +145,37 @@ function AccordionSection({
 // MAIN COMPONENT
 // ==========================================
 export default function StepReview() {
-  const { draft, setStep, back } = useListing();
+  const { draft, setStep, back, setPage } = useListing();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [listingId, setListingId] = useState<string | null>(null);
   const { pricing } = draft;
 
-  const handlePublish = () => {
-    // TODO: Submit to Sharetribe API
-    console.log("Publishing listing:", JSON.stringify(draft, null, 2));
-    setShowCelebration(true);
-  };
+  const handlePublish = useCallback(async () => {
+    setPublishing(true);
+    setPublishError(null);
+
+    // TODO: Replace with real authenticated user ID from Sharetribe session
+    const authorId = "00000000-0000-0000-0000-000000000000";
+
+    try {
+      const result = await createListing(draft, authorId);
+      if (result.success) {
+        setListingId(result.listingId ?? null);
+        setShowCelebration(true);
+        console.log("Listing created:", result.listingId);
+      } else {
+        setPublishError(result.error ?? "Unknown error");
+        console.error("Publish failed:", result.error);
+      }
+    } catch (err: any) {
+      setPublishError(err.message);
+      console.error("Publish error:", err);
+    } finally {
+      setPublishing(false);
+    }
+  }, [draft]);
 
   const handleSaveDraft = () => {
     // Already auto-saved to localStorage
@@ -420,6 +446,24 @@ export default function StepReview() {
         </div>
       </AccordionSection>
 
+      {/* Preview buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setPage("product")}
+          className="flex-1 py-3 rounded-xl border-2 border-cyan-200 text-cyan-700 font-semibold hover:bg-cyan-50 transition-all flex items-center justify-center gap-2"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Preview as Guest
+        </button>
+        <button
+          onClick={() => setPage("cards")}
+          className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+        >
+          <Star className="w-4 h-4" />
+          Search Results View
+        </button>
+      </div>
+
       {/* Publish Buttons */}
       <div className="flex gap-3">
         <button
@@ -431,12 +475,28 @@ export default function StepReview() {
         </button>
         <button
           onClick={handlePublish}
-          className="flex-1 py-4 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200 flex items-center justify-center gap-2"
+          disabled={publishing}
+          className="flex-1 py-4 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Rocket className="w-4 h-4" />
-          Publish Now
+          {publishing ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            <>
+              <Rocket className="w-4 h-4" />
+              Publish to Sharetribe
+            </>
+          )}
         </button>
       </div>
+
+      {publishError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+          <strong>Publish failed:</strong> {publishError}
+        </div>
+      )}
 
       <p className="text-center text-xs text-slate-400">
         You can edit your listing anytime after publishing
@@ -454,7 +514,7 @@ export default function StepReview() {
 
       {/* Celebration Modal */}
       {showCelebration && (
-        <CelebrationModal onClose={() => setShowCelebration(false)} />
+        <CelebrationModal onClose={() => setShowCelebration(false)} listingId={listingId} />
       )}
     </div>
   );
