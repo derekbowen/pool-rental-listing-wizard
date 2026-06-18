@@ -65,7 +65,7 @@ app.post("/api/sharetribe/update-listing", async (req, res) => {
 
 // Serve static wizard files
 app.use("/wizard", express.static(path.join(__dirname, "../dist")));
-app.get("/wizard/*", (req, res) => {
+app.get("/wizard/{*path}", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
