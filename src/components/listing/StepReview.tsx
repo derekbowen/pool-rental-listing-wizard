@@ -2,6 +2,18 @@ import { useState, useCallback } from "react";
 import { useListing } from "@/contexts/ListingContext";
 import { cn } from "@/lib/utils";
 import { createListing } from "@/lib/sharetribe";
+import { getCurrentUser, authPopup } from "@/lib/auth";
+import {
+  CATEGORY_L1,
+  CATEGORY_L2,
+  SPACE_ACTIVITIES,
+  POOL_AMENITIES,
+  WATER_TYPE_OPTIONS,
+  CHECKIN_OPTIONS,
+  PARKING_SIZE_OPTIONS,
+  HOUSE_RULES_OPTIONS,
+  labelFor,
+} from "@/lib/sharetribe-fields";
 import {
   Star,
   MapPin,
@@ -23,8 +35,8 @@ import {
 function CelebrationModal({ onClose, listingId }: { onClose: () => void; listingId?: string | null }) {
   const [copied, setCopied] = useState(false);
   const listingUrl = listingId
-    ? `https://poolrentalnearme.com/l/${listingId}`
-    : "https://poolrentalnearme.com/l/your-listing";
+    ? `https://www.poolrentalnearme.com/l/${listingId}`
+    : "https://www.poolrentalnearme.com";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(listingUrl);
@@ -45,7 +57,7 @@ function CelebrationModal({ onClose, listingId }: { onClose: () => void; listing
         {/* Confetti placeholder — in production use canvas-confetti */}
         <div className="text-6xl">🎉</div>
 
-        <h2 className="text-2xl font-bold text-cyan-900">Your listing is live!</h2>
+        <h2 className="text-2xl font-bold text-sky-900">Your listing is live!</h2>
         <p className="text-slate-500">Guests can now find and book your space</p>
 
         {/* Share link */}
@@ -58,7 +70,7 @@ function CelebrationModal({ onClose, listingId }: { onClose: () => void; listing
           />
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 px-3 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-600 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 bg-sky-500 text-white text-xs rounded-lg hover:bg-sky-600 transition-colors"
           >
             {copied ? (
               <>
@@ -73,13 +85,18 @@ function CelebrationModal({ onClose, listingId }: { onClose: () => void; listing
         </div>
 
         <div className="space-y-2">
-          <button className="w-full py-3 bg-cyan-500 text-white rounded-xl font-semibold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-2">
+          <a
+            href={listingUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="w-full py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors flex items-center justify-center gap-2"
+          >
             <ExternalLink className="w-4 h-4" />
             View your listing →
-          </button>
+          </a>
           <button
             onClick={onClose}
-            className="w-full py-3 text-slate-500 hover:text-cyan-600 font-medium transition-colors"
+            className="w-full py-3 text-slate-500 hover:text-sky-600 font-medium transition-colors"
           >
             List another space →
           </button>
@@ -120,7 +137,7 @@ function AccordionSection({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="text-xs text-cyan-600 hover:text-cyan-700 font-medium"
+              className="text-xs text-sky-600 hover:text-sky-700 font-medium"
             >
               Edit
             </span>
@@ -152,34 +169,49 @@ export default function StepReview() {
   const [listingId, setListingId] = useState<string | null>(null);
   const { pricing } = draft;
 
-  const handlePublish = useCallback(async () => {
+  const doPublish = useCallback(async () => {
     setPublishing(true);
     setPublishError(null);
-
-    // TODO: Replace with real authenticated user ID from Sharetribe session
-    const authorId = "00000000-0000-0000-0000-000000000000";
-
     try {
-      const result = await createListing(draft, authorId);
+      const result = await createListing(draft);
       if (result.success) {
         setListingId(result.listingId ?? null);
         setShowCelebration(true);
-        console.log("Listing created:", result.listingId);
       } else {
         setPublishError(result.error ?? "Unknown error");
-        console.error("Publish failed:", result.error);
       }
     } catch (err: any) {
       setPublishError(err.message);
-      console.error("Publish error:", err);
     } finally {
       setPublishing(false);
     }
   }, [draft]);
 
+  // Require a geocoded address, then a marketplace sign-in (so the listing is
+  // owned by the host's account), then publish.
+  const handlePublish = useCallback(async () => {
+    if (!(draft.location.address && draft.location.lat != null && draft.location.lng != null)) {
+      setPublishError("Please add your pool's address (pick it from the dropdown) before publishing.");
+      setStep(3);
+      return;
+    }
+    let user = await getCurrentUser();
+    if (!user) {
+      await authPopup("signup");
+      user = await getCurrentUser();
+      if (!user) {
+        setPublishError("Please sign in to publish your listing.");
+        return;
+      }
+    }
+    doPublish();
+  }, [doPublish, draft.location, setStep]);
+
   const handleSaveDraft = () => {
-    // Already auto-saved to localStorage
-    alert("Draft saved! You can resume anytime from your dashboard.");
+    // Auto-saved to localStorage on this device/browser.
+    alert(
+      "✓ Saved on this device. Come back on this same phone or browser to finish — or hit Publish to make it live.",
+    );
   };
 
   const coverPhoto = draft.images[0]?.preview;
@@ -187,7 +219,7 @@ export default function StepReview() {
   return (
     <div className="py-8 space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">
+        <h1 className="text-3xl font-bold text-sky-900">
           You're all set! Here's your listing preview.
         </h1>
       </div>
@@ -237,25 +269,22 @@ export default function StepReview() {
             </div>
           )}
 
-          <p className="text-lg font-bold text-cyan-700">
+          <p className="text-lg font-bold text-sky-700">
             ${(pricing.basePrice / 100).toFixed(0)}/hr
           </p>
 
           {/* Category badges */}
           <div className="flex flex-wrap gap-1">
             {draft.category && (
-              <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded-full text-xs font-medium">
-                {draft.category}
+              <span className="px-2 py-0.5 bg-sky-100 text-sky-700 rounded-full text-xs font-medium">
+                {labelFor(CATEGORY_L1, draft.category)}
               </span>
             )}
-            {draft.subcategory.slice(0, 3).map((sub) => (
-              <span
-                key={sub}
-                className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium"
-              >
-                {sub}
+            {draft.subcategory && (
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                {labelFor(CATEGORY_L2[draft.category] || [], draft.subcategory)}
               </span>
-            ))}
+            )}
           </div>
 
           {/* Truncated description */}
@@ -285,7 +314,7 @@ export default function StepReview() {
                   className="w-full h-full object-cover"
                 />
                 {idx === 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-cyan-600 text-white text-[10px] text-center py-0.5">
+                  <div className="absolute bottom-0 left-0 right-0 bg-sky-600 text-white text-[10px] text-center py-0.5">
                     Cover
                   </div>
                 )}
@@ -305,27 +334,26 @@ export default function StepReview() {
               {draft.publicData.space.map((feat) => (
                 <span
                   key={feat}
-                  className="px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs"
+                  className="px-2 py-1 bg-sky-100 text-sky-700 rounded-full text-xs"
                 >
-                  {feat}
+                  {labelFor(SPACE_ACTIVITIES, feat)}
                 </span>
               ))}
-              {draft.publicData.safety.map((feat) => (
+              {draft.publicData.poolAmenities.map((feat) => (
                 <span
                   key={feat}
                   className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs"
                 >
-                  {feat}
+                  {labelFor(POOL_AMENITIES, feat)}
                 </span>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-              <div>Pool Depth: <strong>{draft.publicData.pool_depth || "—"}</strong></div>
-              <div>Water: <strong>{draft.publicData.water_type || "—"}</strong></div>
+              <div>Water: <strong>{draft.publicData.water_type ? labelFor(WATER_TYPE_OPTIONS, draft.publicData.water_type) : "—"}</strong></div>
               <div>Max Guests: <strong>{draft.publicData.guestallowed}</strong></div>
               <div>Sq Ft: <strong>{draft.publicData.squarefootage}</strong></div>
-              <div>WiFi: <strong>{draft.publicData.wifi || "—"}</strong></div>
-              <div>ADA: <strong>{draft.publicData.disabilities || "—"}</strong></div>
+              <div>Check-in: <strong>{draft.publicData.checkingin ? labelFor(CHECKIN_OPTIONS, draft.publicData.checkingin) : "—"}</strong></div>
+              <div>Parking: <strong>{draft.publicData.parking_size ? labelFor(PARKING_SIZE_OPTIONS, draft.publicData.parking_size) : "—"}</strong></div>
             </div>
           </div>
         </AccordionSection>
@@ -366,7 +394,7 @@ export default function StepReview() {
               <span
                 className={cn(
                   "font-semibold",
-                  pricing.instantBooking ? "text-cyan-600" : "text-slate-400",
+                  pricing.instantBooking ? "text-sky-600" : "text-slate-400",
                 )}
               >
                 {pricing.instantBooking ? "On" : "Off"}
@@ -398,20 +426,23 @@ export default function StepReview() {
           </p>
         </AccordionSection>
 
-        {/* Policies */}
+        {/* House rules */}
         <AccordionSection
-          title="Policies"
+          title="House rules"
           icon={FileText}
           onEdit={() => setStep(3)}
         >
-          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-            <div>Alcohol: <strong>{draft.publicData.alcohol || "—"}</strong></div>
-            <div>Smoking: <strong>{draft.publicData.smoking || "—"}</strong></div>
-            <div>Music: <strong>{draft.publicData.loud_music || "—"}</strong></div>
-            <div>Nudity: <strong>{draft.publicData.nudity || "—"}</strong></div>
-            <div>Vendors: <strong>{draft.publicData.third_party_vendors || "—"}</strong></div>
-            <div>Cameras: <strong>{draft.publicData.security_camera || "—"}</strong></div>
-          </div>
+          {draft.publicData.houseRules.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {draft.publicData.houseRules.map((r) => (
+                <span key={r} className="px-2 py-1 bg-slate-100 text-slate-600 rounded-full text-xs">
+                  {labelFor(HOUSE_RULES_OPTIONS, r)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">No house rules set</p>
+          )}
         </AccordionSection>
       </div>
 
@@ -429,7 +460,7 @@ export default function StepReview() {
                 className={cn(
                   "px-2 py-1 rounded-full text-xs font-medium capitalize",
                   sched.enabled
-                    ? "bg-cyan-100 text-cyan-700"
+                    ? "bg-sky-100 text-sky-700"
                     : "bg-slate-100 text-slate-400 line-through",
                 )}
               >
@@ -450,7 +481,7 @@ export default function StepReview() {
       <div className="flex gap-3">
         <button
           onClick={() => setPage("product")}
-          className="flex-1 py-3 rounded-xl border-2 border-cyan-200 text-cyan-700 font-semibold hover:bg-cyan-50 transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3 rounded-xl border-2 border-sky-200 text-sky-700 font-semibold hover:bg-sky-50 transition-all flex items-center justify-center gap-2"
         >
           <ExternalLink className="w-4 h-4" />
           Preview as Guest
@@ -476,7 +507,7 @@ export default function StepReview() {
         <button
           onClick={handlePublish}
           disabled={publishing}
-          className="flex-1 py-4 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex-1 py-4 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {publishing ? (
             <>

@@ -15,7 +15,7 @@ export default function ProgressBar() {
             key={label}
             className={cn(
               "text-xs font-medium transition-colors duration-300",
-              i + 1 <= step ? "text-cyan-600" : "text-slate-400",
+              i + 1 <= step ? "text-sky-600" : "text-slate-400",
             )}
           >
             {label}
@@ -25,7 +25,7 @@ export default function ProgressBar() {
       {/* Progress track */}
       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full transition-all duration-500 ease-out"
+          className="h-full bg-gradient-to-r from-sky-500 to-sky-600 rounded-full transition-all duration-500 ease-out"
           style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
         />
       </div>

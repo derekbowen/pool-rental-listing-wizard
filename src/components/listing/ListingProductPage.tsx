@@ -2,6 +2,16 @@ import { useState, useMemo } from "react";
 import { useListing } from "@/contexts/ListingContext";
 import { cn, to12h } from "@/lib/utils";
 import {
+  SPACE_ACTIVITIES,
+  POOL_AMENITIES,
+  WATER_TYPE_OPTIONS,
+  CHECKIN_OPTIONS,
+  PARKING_SIZE_OPTIONS,
+  ACCESSIBILITY_OPTIONS,
+  HOUSE_RULES_OPTIONS,
+  labelFor,
+} from "@/lib/sharetribe-fields";
+import {
   ChevronLeft,
   ChevronRight,
   Star,
@@ -102,7 +112,7 @@ function PhotoGallery({
 
           {/* Price badge — teal, on hero */}
           {pricePerHour !== undefined && (
-            <div className="absolute bottom-3 left-3 px-4 py-2 bg-cyan-600 rounded-lg shadow-md">
+            <div className="absolute bottom-3 left-3 px-4 py-2 bg-sky-600 rounded-lg shadow-md">
               <span className="text-white font-bold text-lg">
                 ${(pricePerHour / 100).toFixed(0)}
               </span>
@@ -113,7 +123,7 @@ function PhotoGallery({
           {/* Distance badge — top left */}
           {distance && (
             <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm">
-              <MapPin className="w-3.5 h-3.5 text-cyan-600" />
+              <MapPin className="w-3.5 h-3.5 text-sky-600" />
               <span className="text-sm font-semibold text-slate-700">{distance}</span>
             </div>
           )}
@@ -200,8 +210,8 @@ function BookingCard({
       </div>
 
       {/* Date picker placeholder */}
-      <button className="w-full flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-xl hover:border-cyan-400 transition-colors text-left">
-        <CalendarDays className="w-5 h-5 text-cyan-600" />
+      <button className="w-full flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-xl hover:border-sky-400 transition-colors text-left">
+        <CalendarDays className="w-5 h-5 text-sky-600" />
         <div>
           <p className="text-sm font-semibold text-slate-700">Select a date</p>
           <p className="text-xs text-slate-400">Choose when you'd like to swim</p>
@@ -228,14 +238,14 @@ function BookingCard({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setHours((h) => Math.max(minHours, h - 1))}
-            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
           >
             <Minus className="w-3 h-3" />
           </button>
           <span className="text-lg font-bold w-14 text-center">{hours} hr{hours > 1 ? "s" : ""}</span>
           <button
             onClick={() => setHours((h) => Math.min(maxHours, h + 1))}
-            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -248,14 +258,14 @@ function BookingCard({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setGuests((g) => Math.max(1, g - 1))}
-            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
           >
             <Minus className="w-3 h-3" />
           </button>
           <span className="text-lg font-bold w-14 text-center">{guests}</span>
           <button
             onClick={() => setGuests((g) => Math.min(50, g + 1))}
-            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -284,7 +294,7 @@ function BookingCard({
       </div>
 
       {/* Book button */}
-      <button className="w-full py-4 rounded-xl text-lg font-bold bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200 flex items-center justify-center gap-2">
+      <button className="w-full py-4 rounded-xl text-lg font-bold bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200 transition-all duration-200 flex items-center justify-center gap-2">
         {instantBooking && <Zap className="w-5 h-5" />}
         {instantBooking ? "Instant Book" : "Request to Book"}
       </button>
@@ -302,7 +312,7 @@ function BookingCard({
 function FeaturePill({ label, icon: Icon }: { label: string; icon?: React.ElementType }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-sm text-slate-700">
-      {Icon && <Icon className="w-3.5 h-3.5 text-cyan-600" />}
+      {Icon && <Icon className="w-3.5 h-3.5 text-sky-600" />}
       {label}
     </span>
   );
@@ -359,17 +369,10 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
     [availability.schedule],
   );
 
-  const policyEntries = useMemo(() => {
-    const p = draft.publicData;
-    return [
-      { label: "Alcohol", value: p.alcohol },
-      { label: "Smoking", value: p.smoking },
-      { label: "Music", value: p.loud_music },
-      { label: "Nudity", value: p.nudity },
-      { label: "Outside Vendors", value: p.third_party_vendors },
-      { label: "Security Cameras", value: p.security_camera },
-    ].filter((e) => e.value);
-  }, [draft.publicData]);
+  const policyEntries = useMemo(
+    () => draft.publicData.houseRules.map((code) => labelFor(HOUSE_RULES_OPTIONS, code)),
+    [draft.publicData],
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -378,7 +381,7 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-cyan-600 transition-colors"
+            className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-sky-600 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to editor
@@ -435,11 +438,11 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
               {/* Quick stats */}
               <div className="flex flex-wrap gap-3 mt-4">
                 <span className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <Users className="w-4 h-4 text-cyan-600" />
+                  <Users className="w-4 h-4 text-sky-600" />
                   Up to {draft.publicData.guestallowed} guests
                 </span>
                 <span className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <Clock className="w-4 h-4 text-cyan-600" />
+                  <Clock className="w-4 h-4 text-sky-600" />
                   {availability.minHours}–{availability.maxHours} hours
                 </span>
                 {pricing.instantBooking && (
@@ -448,10 +451,10 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
                     Instant Book
                   </span>
                 )}
-                {draft.publicData.privatespace && (
+                {draft.publicData.guestallowed > 0 && (
                   <span className="flex items-center gap-1.5 text-sm text-slate-600">
-                    <Shield className="w-4 h-4 text-cyan-600" />
-                    {draft.publicData.privatespace}
+                    <Users className="w-4 h-4 text-sky-600" />
+                    Up to {draft.publicData.guestallowed} guests
                   </span>
                 )}
               </div>
@@ -466,53 +469,46 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
               </p>
             </Section>
 
-            {/* Space Features */}
+            {/* Good for (activities) */}
             {draft.publicData.space.length > 0 && (
-              <Section title="Space features">
+              <Section title="Good for">
                 <div className="flex flex-wrap gap-2">
                   {draft.publicData.space.map((f) => (
-                    <FeaturePill key={f} label={f} icon={Waves} />
+                    <FeaturePill key={f} label={labelFor(SPACE_ACTIVITIES, f)} icon={Waves} />
                   ))}
                 </div>
               </Section>
             )}
 
-            {/* Safety */}
-            {draft.publicData.safety.length > 0 && (
-              <Section title="Safety features">
+            {/* Amenities */}
+            {draft.publicData.poolAmenities.length > 0 && (
+              <Section title="Amenities">
                 <div className="flex flex-wrap gap-2">
-                  {draft.publicData.safety.map((f) => (
-                    <FeaturePill key={f} label={f} icon={Shield} />
+                  {draft.publicData.poolAmenities.map((f) => (
+                    <FeaturePill key={f} label={labelFor(POOL_AMENITIES, f)} icon={Droplets} />
                   ))}
                 </div>
               </Section>
             )}
 
-            {/* Outdoor Kitchen */}
-            {draft.publicData.outdoor_kitchen.length > 0 &&
-              !draft.publicData.outdoor_kitchen.includes("No Outdoor Kitchen or Bar") && (
-                <Section title="Outdoor kitchen & bar">
-                  <div className="flex flex-wrap gap-2">
-                    {draft.publicData.outdoor_kitchen.map((f) => (
-                      <FeaturePill key={f} label={f} icon={Flame} />
-                    ))}
-                  </div>
-                </Section>
-              )}
+            {/* Accessibility */}
+            {draft.publicData.accessibility.length > 0 && (
+              <Section title="Accessibility">
+                <div className="flex flex-wrap gap-2">
+                  {draft.publicData.accessibility.map((f) => (
+                    <FeaturePill key={f} label={labelFor(ACCESSIBILITY_OPTIONS, f)} icon={Shield} />
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* Pool Details */}
             <Section title="Pool details">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {draft.publicData.pool_depth && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase">Depth</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.pool_depth}</span>
-                  </div>
-                )}
                 {draft.publicData.water_type && (
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-slate-400 uppercase">Water</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.water_type}</span>
+                    <span className="text-sm font-medium text-slate-700">{labelFor(WATER_TYPE_OPTIONS, draft.publicData.water_type)}</span>
                   </div>
                 )}
                 {draft.publicData.squarefootage > 0 && (
@@ -524,31 +520,13 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
                 {draft.publicData.checkingin && (
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-slate-400 uppercase">Check-in</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.checkingin}</span>
+                    <span className="text-sm font-medium text-slate-700">{labelFor(CHECKIN_OPTIONS, draft.publicData.checkingin)}</span>
                   </div>
                 )}
                 {draft.publicData.parking_size && (
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-slate-400 uppercase">Parking</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.parking_size}</span>
-                  </div>
-                )}
-                {draft.publicData.wifi && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase">WiFi</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.wifi}</span>
-                  </div>
-                )}
-                {draft.publicData.shower && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase">Shower</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.shower}</span>
-                  </div>
-                )}
-                {draft.publicData.disabilities && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase">ADA Access</span>
-                    <span className="text-sm font-medium text-slate-700">{draft.publicData.disabilities}</span>
+                    <span className="text-sm font-medium text-slate-700">{labelFor(PARKING_SIZE_OPTIONS, draft.publicData.parking_size)}</span>
                   </div>
                 )}
               </div>
@@ -569,7 +547,7 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
                           <p className="text-xs text-slate-400 mt-0.5">{u.description}</p>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-cyan-600">
+                      <span className="text-sm font-bold text-sky-600">
                         +${(u.price / 100).toFixed(0)}/hr
                       </span>
                     </div>
@@ -603,10 +581,10 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
                   {enabledDays.map((d) => (
                     <div
                       key={d.day}
-                      className="px-3 py-2 bg-cyan-50 rounded-xl text-center"
+                      className="px-3 py-2 bg-sky-50 rounded-xl text-center"
                     >
-                      <p className="text-xs font-bold text-cyan-700">{d.day.slice(0, 3)}</p>
-                      <p className="text-[10px] text-cyan-600 mt-0.5">
+                      <p className="text-xs font-bold text-sky-700">{d.day.slice(0, 3)}</p>
+                      <p className="text-[10px] text-sky-600 mt-0.5">
                         {to12h(d.start)}–{to12h(d.end)}
                       </p>
                     </div>
@@ -625,14 +603,9 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
             {/* House Rules */}
             {policyEntries.length > 0 && (
               <Section title="House rules" defaultOpen={false}>
-                <div className="grid grid-cols-2 gap-3">
-                  {policyEntries.map((p) => (
-                    <div key={p.label} className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-slate-400 uppercase">
-                        {p.label}
-                      </span>
-                      <span className="text-sm text-slate-700">{p.value}</span>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  {policyEntries.map((rule) => (
+                    <FeaturePill key={rule} label={rule} icon={Info} />
                   ))}
                 </div>
               </Section>
@@ -697,7 +670,7 @@ export default function ListingProductPage({ onBack }: { onBack: () => void }) {
               </span>
               <span className="text-slate-500 text-sm"> / hour</span>
             </div>
-            <button className="px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200 flex items-center gap-2">
+            <button className="px-6 py-3 rounded-xl text-sm font-bold bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200 transition-all duration-200 flex items-center gap-2">
               {pricing.instantBooking && <Zap className="w-4 h-4" />}
               {pricing.instantBooking ? "Instant Book" : "Request to Book"}
             </button>

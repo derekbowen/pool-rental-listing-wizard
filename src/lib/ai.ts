@@ -1,88 +1,79 @@
 import {
-  SPACE_FEATURES,
-  SAFETY_FEATURES,
-  OUTDOOR_KITCHEN_OPTIONS,
-  POOL_DEPTHS,
-  WATER_TYPES,
-  CHECKIN_STYLES,
-  SPACE_TYPES,
-  PARKING_OPTIONS,
-  RESTROOM_OPTIONS,
-  POLICIES,
-} from "./constants";
+  CATEGORY_L2,
+  SPACE_ACTIVITIES,
+  POOL_AMENITIES,
+  WATER_TYPE_OPTIONS,
+  CHECKIN_OPTIONS,
+  PARKING_SIZE_OPTIONS,
+  ACCESSIBILITY_OPTIONS,
+  HOUSE_RULES_OPTIONS,
+  type FieldOption,
+} from "./sharetribe-fields";
 
+// AI returns PRODUCTION CODES (see sharetribe-fields.ts), not display labels.
 export interface AIListingResult {
   description: string;
-  space: string[];
-  safety: string[];
-  outdoor_kitchen: string[];
-  pool_depth: string;
-  water_type: string;
+  categoryLevel2: string;     // code from CATEGORY_L2[category]
+  space: string[];            // activity codes
+  poolAmenities: string[];    // amenity codes
+  water_type: string;         // code
+  checkingin: string;         // code
+  parking_size: string;       // code
+  accessibility: string[];    // codes
+  houseRules: string[];       // codes
   guestallowed: number;
   squarefootage: number;
-  checkingin: string;
-  privatespace: string;
-  parking_size: string;
-  restroompool: string[];
-  shower: string;
-  shower_room: string;
-  wifi: string;
-  disabilities: string;
-  alcohol: string;
-  smoking: string;
-  loud_music: string;
-  nudity: string;
-  third_party_vendors: string;
-  security_camera: string;
 }
 
-const SYSTEM_PROMPT = `You are an AI assistant for Pool Rental Near Me (poolrentalnearme.com), a marketplace for hourly pool and backyard rentals. Analyze the provided photos of a listing and return a JSON object with the following fields. Be specific and accurate based on what you see.
+// Render an option list as "code = Label" lines so the model returns CODES.
+const optLines = (opts: FieldOption[]) =>
+  opts.map((o) => `    ${o.code} = ${o.label}`).join("\n");
 
-IMPORTANT: Only use values from the allowed options listed below. If you can't determine something from the photos, use a sensible default.
+function buildSystemPrompt(categoryL1: string): string {
+  const subcats = CATEGORY_L2[categoryL1] || CATEGORY_L2.pool;
+  return `You are an AI assistant for Pool Rental Near Me (poolrentalnearme.com), a marketplace for hourly pool & backyard rentals. Analyze the provided photos and return a JSON object describing the listing.
 
-Allowed values:
-- space: ${JSON.stringify(SPACE_FEATURES)}
-- safety: ${JSON.stringify(SAFETY_FEATURES)}
-- outdoor_kitchen: ${JSON.stringify(OUTDOOR_KITCHEN_OPTIONS)}
-- pool_depth: ${JSON.stringify(POOL_DEPTHS)}
-- water_type: ${JSON.stringify(WATER_TYPES)}
-- checkingin: ${JSON.stringify(CHECKIN_STYLES)}
-- privatespace: ${JSON.stringify(SPACE_TYPES)}
-- parking_size: ${JSON.stringify(PARKING_OPTIONS)}
-- restroompool: ${JSON.stringify(RESTROOM_OPTIONS)}
-- shower / shower_room / wifi / disabilities: "Yes" or "No"
-- alcohol: ${JSON.stringify(POLICIES.find((p) => p.id === "alcohol")!.options)}
-- smoking: ${JSON.stringify(POLICIES.find((p) => p.id === "smoking")!.options)}
-- loud_music: ${JSON.stringify(POLICIES.find((p) => p.id === "loud_music")!.options)}
-- nudity: ${JSON.stringify(POLICIES.find((p) => p.id === "nudity")!.options)}
-- third_party_vendors: ${JSON.stringify(POLICIES.find((p) => p.id === "third_party_vendors")!.options)}
-- security_camera: ${JSON.stringify(POLICIES.find((p) => p.id === "security_camera")!.options)}
+CRITICAL: For every coded field, return ONLY the exact CODE (left of the "=") from the allowed lists below — never the human label, never your own words. Use [] for multi-select fields when nothing applies. Pick what the photos actually show.
 
-Return ONLY a valid JSON object matching this schema:
+categoryLevel2 (pick ONE code):
+${optLines(subcats)}
+
+space — what the place is good for (multi-select, pick all that fit):
+${optLines(SPACE_ACTIVITIES)}
+
+poolAmenities — physical amenities visible (multi-select):
+${optLines(POOL_AMENITIES)}
+
+water_type (pick ONE):
+${optLines(WATER_TYPE_OPTIONS)}
+
+checkingin (pick ONE):
+${optLines(CHECKIN_OPTIONS)}
+
+parking_size (pick ONE):
+${optLines(PARKING_SIZE_OPTIONS)}
+
+accessibility (multi-select, only if clearly supported):
+${optLines(ACCESSIBILITY_OPTIONS)}
+
+houseRules (multi-select — sensible defaults for a pool rental are fine):
+${optLines(HOUSE_RULES_OPTIONS)}
+
+Return ONLY a valid JSON object with this exact schema (codes only):
 {
-  "description": "3-paragraph listing description (warm, inviting, specific to photos)",
-  "space": ["array of detected space features"],
-  "safety": ["array of detected safety features"],
-  "outdoor_kitchen": ["array of detected kitchen/bar features"],
-  "pool_depth": "estimated depth",
-  "water_type": "detected water type",
+  "description": "3-paragraph listing description (warm, inviting, specific to the photos)",
+  "categoryLevel2": "one code",
+  "space": ["activity codes"],
+  "poolAmenities": ["amenity codes"],
+  "water_type": "one code",
+  "checkingin": "one code",
+  "parking_size": "one code",
+  "accessibility": ["codes"],
+  "houseRules": ["codes"],
   "guestallowed": 15,
-  "squarefootage": 800,
-  "checkingin": "check-in style",
-  "privatespace": "privacy level",
-  "parking_size": "parking option",
-  "restroompool": ["restroom options"],
-  "shower": "Yes or No",
-  "shower_room": "Yes or No",
-  "wifi": "Yes or No",
-  "disabilities": "Yes or No",
-  "alcohol": "policy",
-  "smoking": "policy",
-  "loud_music": "policy",
-  "nudity": "policy",
-  "third_party_vendors": "policy",
-  "security_camera": "policy"
+  "squarefootage": 800
 }`;
+}
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -116,7 +107,7 @@ export async function analyzeListingPhotos(
     ...imageContents,
     {
       type: "text" as const,
-      text: `Analyze these ${photosToSend.length} photos of a "${title || "pool rental"}" listing (category: ${category || "pool"}). Return the JSON object described in the system prompt. Be specific about what you actually see in the photos.`,
+      text: `Analyze these ${photosToSend.length} photos of a "${title || "pool rental"}" listing (category: ${category || "pool"}). Return the JSON object described in the system prompt, using ONLY the allowed codes.`,
     },
   ];
 
@@ -131,7 +122,7 @@ export async function analyzeListingPhotos(
     body: JSON.stringify({
       model: "anthropic/claude-sonnet-4-6",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: buildSystemPrompt(category || "pool") },
         { role: "user", content: userContent },
       ],
       max_tokens: 2000,

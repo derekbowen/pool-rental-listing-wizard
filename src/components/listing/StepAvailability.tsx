@@ -149,7 +149,7 @@ function DatePopover({
           {!isBlocked && (
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <DollarSign className="w-4 h-4 text-cyan-600" />
+                <DollarSign className="w-4 h-4 text-sky-600" />
                 Custom price for this date
               </label>
               <div className="flex gap-2">
@@ -164,7 +164,7 @@ function DatePopover({
                     placeholder={String(basePrice / 100)}
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
-                    className="w-full pl-7 pr-12 py-3 border border-slate-200 rounded-xl text-sm focus:border-cyan-500 outline-none"
+                    className="w-full pl-7 pr-12 py-3 border border-slate-200 rounded-xl text-sm focus:border-sky-500 outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                     /hr
@@ -173,20 +173,20 @@ function DatePopover({
                 <button
                   onClick={handleSetPrice}
                   disabled={!priceInput || isNaN(parseFloat(priceInput))}
-                  className="px-4 py-3 bg-cyan-500 text-white rounded-xl font-semibold text-sm hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-3 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Set
                 </button>
               </div>
               {customPrice !== null && (
-                <div className="flex items-center justify-between px-3 py-2 bg-cyan-50 rounded-lg">
-                  <span className="text-xs text-cyan-700">
+                <div className="flex items-center justify-between px-3 py-2 bg-sky-50 rounded-lg">
+                  <span className="text-xs text-sky-700">
                     Custom: <strong>${(customPrice / 100).toFixed(0)}/hr</strong>{" "}
                     (base: ${(basePrice / 100).toFixed(0)}/hr)
                   </span>
                   <button
                     onClick={handleClearPrice}
-                    className="text-xs text-cyan-600 hover:text-cyan-800 font-medium"
+                    className="text-xs text-sky-600 hover:text-sky-800 font-medium"
                   >
                     Reset
                   </button>
@@ -211,7 +211,7 @@ function DatePopover({
                   note: e.target.value || undefined,
                 });
               }}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-cyan-500 outline-none"
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-sky-500 outline-none"
             />
           </div>
         </div>
@@ -328,16 +328,16 @@ function AvailabilityCalendar({
               className={cn(
                 "relative w-full aspect-square rounded-xl text-sm font-medium transition-all duration-150 flex flex-col items-center justify-center gap-0.5",
                 isPast && "text-slate-200 cursor-not-allowed",
-                isToday && !isBlocked && !hasCustomPrice && "ring-2 ring-cyan-400",
-                !isPast && !isBlocked && !hasCustomPrice && "text-slate-700 hover:bg-cyan-50",
+                isToday && !isBlocked && !hasCustomPrice && "ring-2 ring-sky-400",
+                !isPast && !isBlocked && !hasCustomPrice && "text-slate-700 hover:bg-sky-50",
                 !isPast && isBlocked && "bg-red-50 text-red-400 ring-1 ring-red-200",
-                !isPast && hasCustomPrice && "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
+                !isPast && hasCustomPrice && "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
               )}
             >
               <span className={cn("text-sm", isBlocked && "line-through")}>{day}</span>
               {/* Price label under date number */}
               {!isPast && hasCustomPrice && override?.pricePerHour && (
-                <span className="text-[9px] font-bold text-cyan-600 leading-none">
+                <span className="text-[9px] font-bold text-sky-600 leading-none">
                   ${(override.pricePerHour / 100).toFixed(0)}
                 </span>
               )}
@@ -357,7 +357,7 @@ function AvailabilityCalendar({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center pt-1">
         <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span className="w-3 h-3 rounded bg-cyan-50 ring-1 ring-cyan-200" />
+          <span className="w-3 h-3 rounded bg-sky-50 ring-1 ring-sky-200" />
           Custom price
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
@@ -365,7 +365,7 @@ function AvailabilityCalendar({
           Blocked
         </span>
         <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span className="w-3 h-3 rounded ring-2 ring-cyan-400" />
+          <span className="w-3 h-3 rounded ring-2 ring-sky-400" />
           Today
         </span>
       </div>
@@ -446,7 +446,7 @@ export default function StepAvailability() {
   return (
     <div className="py-8 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">Set your availability</h1>
+        <h1 className="text-3xl font-bold text-sky-900">Set your availability</h1>
         <p className="mt-2 text-slate-500">
           Manage your calendar, set custom daily pricing, and block dates.
         </p>
@@ -455,12 +455,12 @@ export default function StepAvailability() {
       {/* 5A: Integrated Calendar */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-5 h-5 text-cyan-600" />
+          <CalendarDays className="w-5 h-5 text-sky-600" />
           <h2 className="text-lg font-bold text-slate-800">Availability Calendar</h2>
         </div>
         <p className="text-sm text-slate-500">
           Tap any date to set custom pricing or block it out. Base rate:{" "}
-          <strong className="text-cyan-700">
+          <strong className="text-sky-700">
             ${(draft.pricing.basePrice / 100).toFixed(0)}/hr
           </strong>
         </p>
@@ -486,7 +486,7 @@ export default function StepAvailability() {
               </span>
             )}
             {customPriceCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-cyan-600 rounded-full text-xs font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-600 rounded-full text-xs font-medium">
                 <DollarSign className="w-3 h-3" />
                 {customPriceCount} custom price{customPriceCount > 1 ? "s" : ""}
               </span>
@@ -512,7 +512,7 @@ export default function StepAvailability() {
                       {ov.blocked ? (
                         <Ban className="w-3.5 h-3.5 text-red-400" />
                       ) : (
-                        <DollarSign className="w-3.5 h-3.5 text-cyan-500" />
+                        <DollarSign className="w-3.5 h-3.5 text-sky-500" />
                       )}
                       <span className="text-sm text-slate-700">
                         {new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
@@ -525,7 +525,7 @@ export default function StepAvailability() {
                         <span className="text-xs text-red-500 font-medium">Blocked</span>
                       )}
                       {ov.pricePerHour && !ov.blocked && (
-                        <span className="text-xs text-cyan-600 font-bold">
+                        <span className="text-xs text-sky-600 font-bold">
                           ${(ov.pricePerHour / 100).toFixed(0)}/hr
                         </span>
                       )}
@@ -549,7 +549,7 @@ export default function StepAvailability() {
       {/* 5B: Weekly Schedule */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-cyan-600" />
+          <Clock className="w-5 h-5 text-sky-600" />
           <h2 className="text-lg font-bold text-slate-800">Weekly Schedule</h2>
         </div>
 
@@ -562,7 +562,7 @@ export default function StepAvailability() {
             <button
               key={preset.id}
               onClick={() => applyPreset(preset.id)}
-              className="px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 text-slate-600 hover:border-cyan-300 hover:text-cyan-600 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 text-slate-600 hover:border-sky-300 hover:text-sky-600 transition-colors"
             >
               {preset.label}
             </button>
@@ -577,14 +577,14 @@ export default function StepAvailability() {
                 key={day}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200",
-                  sched.enabled ? "border-cyan-200 bg-cyan-50/50" : "border-slate-100 bg-slate-50/50",
+                  sched.enabled ? "border-sky-200 bg-sky-50/50" : "border-slate-100 bg-slate-50/50",
                 )}
               >
                 <button
                   onClick={() => toggleDay(day)}
                   className={cn(
                     "w-12 text-sm font-bold transition-colors capitalize",
-                    sched.enabled ? "text-cyan-700" : "text-slate-300",
+                    sched.enabled ? "text-sky-700" : "text-slate-300",
                   )}
                 >
                   {DAY_LABELS[day]}
@@ -594,7 +594,7 @@ export default function StepAvailability() {
                   onClick={() => toggleDay(day)}
                   className={cn(
                     "relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0",
-                    sched.enabled ? "bg-cyan-500" : "bg-slate-200",
+                    sched.enabled ? "bg-sky-500" : "bg-slate-200",
                   )}
                 >
                   <span
@@ -611,7 +611,7 @@ export default function StepAvailability() {
                     <select
                       value={sched.startTime}
                       onChange={(e) => updateDayTime(day, "startTime", e.target.value)}
-                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
+                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-sky-500 outline-none"
                     >
                       {TIME_OPTIONS.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -621,7 +621,7 @@ export default function StepAvailability() {
                     <select
                       value={sched.endTime}
                       onChange={(e) => updateDayTime(day, "endTime", e.target.value)}
-                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
+                      className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-sky-500 outline-none"
                     >
                       {TIME_OPTIONS.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -691,7 +691,7 @@ export default function StepAvailability() {
             <select
               value={availability.bufferMinutes}
               onChange={(e) => updateAvailability({ bufferMinutes: Number(e.target.value) })}
-              className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
+              className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-sky-500 outline-none"
             >
               <option value={0}>None</option>
               <option value={15}>15 min</option>
@@ -709,7 +709,7 @@ export default function StepAvailability() {
             <select
               value={availability.advanceNoticeDays}
               onChange={(e) => updateAvailability({ advanceNoticeDays: Number(e.target.value) })}
-              className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-cyan-500 outline-none"
+              className="w-full text-sm bg-white border border-slate-200 rounded-lg px-2 py-1.5 focus:border-sky-500 outline-none"
             >
               <option value={0}>Same day OK</option>
               <option value={1}>1 day before</option>
@@ -731,7 +731,7 @@ export default function StepAvailability() {
         </button>
         <button
           onClick={next}
-          className="flex-1 py-4 rounded-xl text-lg font-semibold bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200"
+          className="flex-1 py-4 rounded-xl text-lg font-semibold bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200 transition-all duration-200"
         >
           Review & Publish →
         </button>

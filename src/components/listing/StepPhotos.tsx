@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useListing } from "@/contexts/ListingContext";
 import { cn } from "@/lib/utils";
-import { Camera, GripVertical, X, Star, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Camera, GripVertical, X, Star, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useState } from "react";
 
 export default function StepPhotos() {
@@ -58,17 +58,73 @@ export default function StepPhotos() {
     addPhotos(e.dataTransfer.files);
   };
 
-  const canContinue = draft.images.length >= 3;
+  const toggleImported = (url: string) => {
+    updateDraft({
+      importedPhotos: draft.importedPhotos.map((p) =>
+        p.url === url ? { ...p, selected: !p.selected } : p,
+      ),
+    });
+  };
+
+  const importedSelected = draft.importedPhotos.filter((p) => p.selected).length;
+  const totalPhotos = draft.images.length + importedSelected;
+  const needsRights = importedSelected > 0;
+  const canContinue = totalPhotos >= 3 && (!needsRights || draft.photoRightsConfirmed);
 
   return (
     <div className="py-8 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">Show off your space</h1>
+        <h1 className="text-3xl font-bold text-sky-900">Show off your space</h1>
         <p className="mt-2 text-slate-500">
           Great photos = more bookings. Upload at least 3 photos to continue.
         </p>
       </div>
+
+      {/* Imported photos — review & confirm */}
+      {draft.importedPhotos.length > 0 && (
+        <div className="space-y-3 rounded-2xl border-2 border-sky-100 bg-sky-50/60 p-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-sky-500" />
+            <h2 className="font-semibold text-sky-900">Imported from your link</h2>
+            <span className="text-sm text-slate-400">tap to include or exclude</span>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {draft.importedPhotos.map((p) => (
+              <button
+                key={p.url}
+                type="button"
+                onClick={() => toggleImported(p.url)}
+                className={cn(
+                  "relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-150",
+                  p.selected ? "border-sky-500" : "border-slate-200 opacity-40",
+                )}
+              >
+                <img src={p.url} alt="" className="w-full h-full object-cover" />
+                <div
+                  className={cn(
+                    "absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center",
+                    p.selected ? "bg-sky-500" : "bg-slate-400",
+                  )}
+                >
+                  {p.selected ? <Check className="w-3 h-3 text-white" /> : <X className="w-3 h-3 text-white" />}
+                </div>
+              </button>
+            ))}
+          </div>
+          {needsRights && (
+            <label className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.photoRightsConfirmed}
+                onChange={(e) => updateDraft({ photoRightsConfirmed: e.target.checked })}
+                className="mt-0.5 accent-sky-500"
+              />
+              <span>These are my photos, or I have the rights to use them on Pool Rental Near Me.</span>
+            </label>
+          )}
+        </div>
+      )}
 
       {/* Drop zone */}
       <div
@@ -77,13 +133,13 @@ export default function StepPhotos() {
         onClick={() => fileInputRef.current?.click()}
         className={cn(
           "flex flex-col items-center justify-center gap-3 p-10 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200",
-          "hover:border-cyan-400 hover:bg-cyan-50/50",
-          draft.images.length > 0 ? "border-slate-200 py-6" : "border-cyan-300 bg-cyan-50/30",
+          "hover:border-sky-400 hover:bg-sky-50/50",
+          draft.images.length > 0 ? "border-slate-200 py-6" : "border-sky-300 bg-sky-50/30",
         )}
       >
         <div className="relative">
-          <Camera className="w-10 h-10 text-cyan-500" />
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+          <Camera className="w-10 h-10 text-sky-500" />
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-bold">+</span>
           </div>
         </div>
@@ -114,7 +170,7 @@ export default function StepPhotos() {
                 className={cn(
                   "relative group aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-grab active:cursor-grabbing",
                   dropIdx === idx && dragIdx !== idx
-                    ? "border-cyan-500 scale-[1.02]"
+                    ? "border-sky-500 scale-[1.02]"
                     : "border-transparent",
                   dragIdx === idx ? "opacity-50" : "opacity-100",
                 )}
@@ -140,7 +196,7 @@ export default function StepPhotos() {
                 </button>
                 {/* Cover photo badge */}
                 {idx === 0 && (
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 bg-cyan-600 rounded-full">
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 bg-sky-600 rounded-full">
                     <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
                     <span className="text-xs font-semibold text-white">Cover Photo</span>
                   </div>
@@ -160,7 +216,7 @@ export default function StepPhotos() {
                   key={i}
                   className={cn(
                     "w-2 h-2 rounded-full",
-                    i < draft.images.length ? "bg-cyan-500" : "bg-slate-200",
+                    i < draft.images.length ? "bg-sky-500" : "bg-slate-200",
                   )}
                 />
               ))}
@@ -184,14 +240,14 @@ export default function StepPhotos() {
             value={draft.videoUrl}
             onChange={(e) => updateDraft({ videoUrl: e.target.value })}
             placeholder="https://youtube.com/watch?v=..."
-            className="mt-2 w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm"
+            className="mt-2 w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none transition-all text-sm"
           />
         )}
       </div>
 
       {/* AI banner */}
       {canContinue && (
-        <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl text-white animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-sky-500 to-sky-600 rounded-xl text-white animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Sparkles className="w-6 h-6 flex-shrink-0" />
           <p className="text-sm font-medium">
             Our AI will analyze your photos to auto-fill your listing details — saving you time!
@@ -213,7 +269,7 @@ export default function StepPhotos() {
           className={cn(
             "flex-1 py-4 rounded-xl text-lg font-semibold transition-all duration-200",
             canContinue
-              ? "bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200"
+              ? "bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200"
               : "bg-slate-200 text-slate-400 cursor-not-allowed",
           )}
         >

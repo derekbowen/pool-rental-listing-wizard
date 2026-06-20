@@ -275,7 +275,7 @@ export default function StepPricing() {
   return (
     <div className="py-8 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">Set your rates</h1>
+        <h1 className="text-3xl font-bold text-sky-900">Set your rates</h1>
         <p className="mt-2 text-slate-500">
           You're in control. Adjust anytime after publishing.
         </p>
@@ -292,11 +292,11 @@ export default function StepPricing() {
               onChange={(e) => setBasePrice(Number(e.target.value) || 0)}
               min={0}
               max={999}
-              className="text-5xl font-bold text-cyan-900 w-32 text-center border-b-2 border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+              className="text-5xl font-bold text-sky-900 w-32 text-center border-b-2 border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
             />
             <span className="text-lg text-slate-400 font-medium">/ hour</span>
           </div>
-          <p className="text-sm text-cyan-600 font-medium">
+          <p className="text-sm text-sky-600 font-medium">
             Suggested range: $35 - $75/hr
           </p>
           <p className="text-xs text-slate-400">Based on pools in your area</p>
@@ -310,7 +310,7 @@ export default function StepPricing() {
             max={200}
             value={Number(baseDollars)}
             onChange={(e) => setBasePrice(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-cyan-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer"
+            className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-sky-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-400 mt-1">
             <span>$15</span>
@@ -331,7 +331,7 @@ export default function StepPricing() {
             onClick={() => setShowVariations(!showVariations)}
             className={cn(
               "relative w-11 h-6 rounded-full transition-colors duration-200",
-              showVariations ? "bg-cyan-500" : "bg-slate-200",
+              showVariations ? "bg-sky-500" : "bg-slate-200",
             )}
           >
             <span
@@ -365,14 +365,14 @@ export default function StepPricing() {
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 text-left",
                       exists
-                        ? "border-cyan-500 bg-cyan-50 opacity-60"
-                        : "border-slate-200 hover:border-cyan-300 hover:shadow-sm active:scale-[0.97]",
+                        ? "border-sky-500 bg-sky-50 opacity-60"
+                        : "border-slate-200 hover:border-sky-300 hover:shadow-sm active:scale-[0.97]",
                     )}
                   >
                     <Icon
                       className={cn(
                         "w-5 h-5 flex-shrink-0",
-                        exists ? "text-cyan-500" : "text-slate-400",
+                        exists ? "text-sky-500" : "text-slate-400",
                       )}
                     />
                     <div>
@@ -400,7 +400,7 @@ export default function StepPricing() {
                       updateVariation(v.id, { name: e.target.value })
                     }
                     placeholder="Variation name"
-                    className="text-sm font-semibold border-b border-transparent hover:border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="text-sm font-semibold border-b border-transparent hover:border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                   <button
                     onClick={() => removeVariation(v.id)}
@@ -419,7 +419,7 @@ export default function StepPricing() {
                         pricePerHour: Math.round(Number(e.target.value) * 100),
                       })
                     }
-                    className="w-20 text-lg font-bold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="w-20 text-lg font-bold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                   <span className="text-slate-400 text-sm">/ hour</span>
                 </div>
@@ -435,7 +435,7 @@ export default function StepPricing() {
                   icon: "Pencil",
                 })
               }
-              className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+              className="text-sm text-sky-600 hover:text-sky-700 font-medium"
             >
               + Add another rate
             </button>
@@ -460,7 +460,7 @@ export default function StepPricing() {
             }}
             className={cn(
               "relative w-11 h-6 rounded-full transition-colors duration-200",
-              showDeposit ? "bg-cyan-500" : "bg-slate-200",
+              showDeposit ? "bg-sky-500" : "bg-slate-200",
             )}
           >
             <span
@@ -485,7 +485,7 @@ export default function StepPricing() {
                   })
                 }
                 placeholder="50"
-                className="w-24 text-lg font-bold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                className="w-24 text-lg font-bold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
               />
             </div>
             <p className="text-xs text-slate-400">
@@ -500,7 +500,7 @@ export default function StepPricing() {
         className={cn(
           "p-5 rounded-xl border-2 transition-all duration-300",
           pricing.instantBooking
-            ? "border-cyan-500 bg-gradient-to-r from-cyan-50 to-white"
+            ? "border-sky-500 bg-gradient-to-r from-sky-50 to-white"
             : "border-amber-200 bg-gradient-to-r from-amber-50/50 to-white",
         )}
       >
@@ -510,7 +510,7 @@ export default function StepPricing() {
               <Zap
                 className={cn(
                   "w-5 h-5",
-                  pricing.instantBooking ? "text-cyan-600" : "text-amber-500",
+                  pricing.instantBooking ? "text-sky-600" : "text-amber-500",
                 )}
               />
               <span className="text-lg font-bold text-slate-800">
@@ -533,7 +533,7 @@ export default function StepPricing() {
             }
             className={cn(
               "relative w-14 h-8 rounded-full transition-colors duration-200 flex-shrink-0",
-              pricing.instantBooking ? "bg-cyan-500" : "bg-slate-200",
+              pricing.instantBooking ? "bg-sky-500" : "bg-slate-200",
             )}
           >
             <span
@@ -575,7 +575,7 @@ export default function StepPricing() {
             }}
             className={cn(
               "relative w-11 h-6 rounded-full transition-colors duration-200",
-              showTiers ? "bg-cyan-500" : "bg-slate-200",
+              showTiers ? "bg-sky-500" : "bg-slate-200",
             )}
           >
             <span
@@ -601,7 +601,7 @@ export default function StepPricing() {
                     value={tier.label}
                     onChange={(e) => updateTier(tier.id, { label: e.target.value })}
                     placeholder="Tier name (e.g. Small group)"
-                    className="text-sm font-semibold border-b border-transparent hover:border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="text-sm font-semibold border-b border-transparent hover:border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                   <button
                     onClick={() => removeTier(tier.id)}
@@ -615,7 +615,7 @@ export default function StepPricing() {
                     type="number"
                     value={tier.minGuests}
                     onChange={(e) => updateTier(tier.id, { minGuests: Number(e.target.value) || 1 })}
-                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-cyan-500 outline-none bg-transparent"
+                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-sky-500 outline-none bg-transparent"
                     min={1}
                   />
                   <span className="text-slate-400">to</span>
@@ -624,7 +624,7 @@ export default function StepPricing() {
                     value={tier.maxGuests ?? ""}
                     onChange={(e) => updateTier(tier.id, { maxGuests: Number(e.target.value) || null })}
                     placeholder="∞"
-                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-cyan-500 outline-none bg-transparent"
+                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-sky-500 outline-none bg-transparent"
                     min={1}
                   />
                   <span className="text-slate-400">guests →</span>
@@ -633,7 +633,7 @@ export default function StepPricing() {
                     type="number"
                     value={(tier.pricePerHour / 100).toFixed(0)}
                     onChange={(e) => updateTier(tier.id, { pricePerHour: Math.round(Number(e.target.value) * 100) })}
-                    className="w-16 text-sm font-bold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="w-16 text-sm font-bold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                   <span className="text-xs text-slate-400">/hr</span>
                 </div>
@@ -641,7 +641,7 @@ export default function StepPricing() {
             ))}
             <button
               onClick={addTier}
-              className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+              className="text-sm text-sky-600 hover:text-sky-700 font-medium"
             >
               + Add another tier
             </button>
@@ -676,7 +676,7 @@ export default function StepPricing() {
             }}
             className={cn(
               "relative w-11 h-6 rounded-full transition-colors duration-200",
-              showDurationDiscounts ? "bg-cyan-500" : "bg-slate-200",
+              showDurationDiscounts ? "bg-sky-500" : "bg-slate-200",
             )}
           >
             <span
@@ -702,7 +702,7 @@ export default function StepPricing() {
                     type="number"
                     value={disc.minHours}
                     onChange={(e) => updateDiscount(disc.id, { minHours: Number(e.target.value) || 1 })}
-                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-cyan-500 outline-none bg-transparent"
+                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-sky-500 outline-none bg-transparent"
                     min={2}
                   />
                   <span className="text-slate-400">+ hours →</span>
@@ -710,7 +710,7 @@ export default function StepPricing() {
                     type="number"
                     value={disc.discountPercent}
                     onChange={(e) => updateDiscount(disc.id, { discountPercent: Math.min(50, Number(e.target.value) || 0) })}
-                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-cyan-500 outline-none bg-transparent"
+                    className="w-12 text-center border border-slate-200 rounded-lg py-1 focus:border-sky-500 outline-none bg-transparent"
                     min={1}
                     max={50}
                   />
@@ -726,7 +726,7 @@ export default function StepPricing() {
             ))}
             <button
               onClick={addDurationDiscount}
-              className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+              className="text-sm text-sky-600 hover:text-sky-700 font-medium"
             >
               + Add another discount
             </button>
@@ -758,25 +758,25 @@ export default function StepPricing() {
                   "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
                   "active:scale-[0.97]",
                   active
-                    ? "border-cyan-500 bg-cyan-50"
+                    ? "border-sky-500 bg-sky-50"
                     : "border-slate-200 hover:border-slate-300",
                 )}
               >
                 {active && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-cyan-500 rounded-full flex items-center justify-center">
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
                 <Icon
                   className={cn(
                     "w-6 h-6",
-                    active ? "text-cyan-600" : "text-slate-400",
+                    active ? "text-sky-600" : "text-slate-400",
                   )}
                 />
                 <span
                   className={cn(
                     "text-xs font-semibold text-center",
-                    active ? "text-cyan-900" : "text-slate-600",
+                    active ? "text-sky-900" : "text-slate-600",
                   )}
                 >
                   {sug.name}
@@ -803,8 +803,8 @@ export default function StepPricing() {
                 className="flex items-start gap-3 p-3 border border-slate-200 rounded-xl"
               >
                 {CustomIcon && (
-                  <div className="flex items-center justify-center w-9 h-9 bg-cyan-50 rounded-lg flex-shrink-0 mt-0.5">
-                    <CustomIcon className="w-5 h-5 text-cyan-600" />
+                  <div className="flex items-center justify-center w-9 h-9 bg-sky-50 rounded-lg flex-shrink-0 mt-0.5">
+                    <CustomIcon className="w-5 h-5 text-sky-600" />
                   </div>
                 )}
                 <div className="flex-1 space-y-2">
@@ -814,7 +814,7 @@ export default function StepPricing() {
                     onChange={(e) =>
                       updateUpgrade(u.id, { amenity: e.target.value })
                     }
-                    className="text-sm font-semibold w-full border-b border-transparent hover:border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="text-sm font-semibold w-full border-b border-transparent hover:border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-slate-400">$</span>
@@ -826,7 +826,7 @@ export default function StepPricing() {
                           price: Math.round(Number(e.target.value) * 100),
                         })
                       }
-                      className="w-16 text-sm font-bold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                      className="w-16 text-sm font-bold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                     />
                     <span className="text-xs text-slate-400">/hr</span>
                   </div>
@@ -837,7 +837,7 @@ export default function StepPricing() {
                       updateUpgrade(u.id, { description: e.target.value })
                     }
                     placeholder="Brief description for guests"
-                    className="w-full text-xs text-slate-500 border-b border-transparent hover:border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                    className="w-full text-xs text-slate-500 border-b border-transparent hover:border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
                   />
                 </div>
                 <button
@@ -854,7 +854,7 @@ export default function StepPricing() {
 
         {/* Custom add-on */}
         {showCustomUpgrade ? (
-          <div className="p-4 border-2 border-dashed border-cyan-300 rounded-xl space-y-4">
+          <div className="p-4 border-2 border-dashed border-sky-300 rounded-xl space-y-4">
             {/* Icon picker */}
             <div className="space-y-2">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
@@ -872,7 +872,7 @@ export default function StepPricing() {
                       className={cn(
                         "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-150 active:scale-90",
                         selected
-                          ? "bg-cyan-500 text-white shadow-md ring-2 ring-cyan-300"
+                          ? "bg-sky-500 text-white shadow-md ring-2 ring-sky-300"
                           : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600",
                       )}
                     >
@@ -890,7 +890,7 @@ export default function StepPricing() {
                 setCustomUpgrade({ ...customUpgrade, name: e.target.value })
               }
               placeholder="Upgrade name"
-              className="w-full text-sm font-semibold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent pb-1"
+              className="w-full text-sm font-semibold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent pb-1"
             />
             <div className="flex items-center gap-1">
               <span className="text-slate-400">$</span>
@@ -908,14 +908,14 @@ export default function StepPricing() {
                   })
                 }
                 placeholder="0"
-                className="w-16 text-sm font-bold border-b border-slate-200 focus:border-cyan-500 outline-none transition-colors bg-transparent"
+                className="w-16 text-sm font-bold border-b border-slate-200 focus:border-sky-500 outline-none transition-colors bg-transparent"
               />
               <span className="text-xs text-slate-400">/hr</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={addCustomUpgrade}
-                className="px-4 py-2 bg-cyan-500 text-white text-sm rounded-lg hover:bg-cyan-600 transition-colors"
+                className="px-4 py-2 bg-sky-500 text-white text-sm rounded-lg hover:bg-sky-600 transition-colors"
               >
                 Add
               </button>
@@ -930,7 +930,7 @@ export default function StepPricing() {
         ) : (
           <button
             onClick={() => setShowCustomUpgrade(true)}
-            className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+            className="text-sm text-sky-600 hover:text-sky-700 font-medium"
           >
             + Add custom upgrade
           </button>
@@ -947,7 +947,7 @@ export default function StepPricing() {
         </button>
         <button
           onClick={next}
-          className="flex-1 py-4 rounded-xl text-lg font-semibold bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200"
+          className="flex-1 py-4 rounded-xl text-lg font-semibold bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200 transition-all duration-200"
         >
           Set Availability →
         </button>

@@ -48,7 +48,10 @@ function loadDraft(): ListingDraft {
 }
 
 export function ListingProvider({ children }: { children: React.ReactNode }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<number>(() => {
+    const s = Number(localStorage.getItem("prnm_listing_step"));
+    return s >= 1 && s <= 6 ? s : 1;
+  });
   const [draft, setDraft] = useState<ListingDraft>(loadDraft);
   const [aiCompleted, setAiCompleted] = useState(false);
   const [page, setPage] = useState<Page>("wizard");
@@ -56,6 +59,11 @@ export function ListingProvider({ children }: { children: React.ReactNode }) {
 
   const next = useCallback(() => setStep((s) => Math.min(s + 1, 6)), []);
   const back = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
+
+  // Persist the current step so returning after a marketplace sign-in resumes here.
+  useEffect(() => {
+    try { localStorage.setItem("prnm_listing_step", String(step)); } catch { /* ignore */ }
+  }, [step]);
 
   const updateDraft = useCallback(
     (partial: Partial<ListingDraft>) => setDraft((prev) => ({ ...prev, ...partial })),

@@ -46,46 +46,32 @@ export interface DateOverride {
 export interface ListingDraft {
   // Step 1
   listingType: ListingTypeId;
-  category: string;
-  subcategory: string[];
+  category: string;       // categoryLevel1 code (e.g. "pool")
+  subcategory: string;    // categoryLevel2 code (single, e.g. "privatepool")
   title: string;
 
   // Step 2
   images: { id: string; file: File; preview: string }[];
   videoUrl: string;
+  importedPhotos: { url: string; selected: boolean }[];
+  photoRightsConfirmed: boolean;
 
-  // Step 3
+  // Step 3 — all values are PRODUCTION CODES (see sharetribe-fields.ts)
   description: string;
   publicData: {
-    space: string[];
-    safety: string[];
-    outdoor_kitchen: string[];
-    pool_depth: string;
-    water_type: string;
+    space: string[];          // activity codes (what it's good for)
+    poolAmenities: string[];  // amenity codes
+    water_type: string;       // code
+    checkingin: string;       // code
+    parking_size: string;     // code
+    accessibility: string[];  // codes
+    houseRules: string[];     // codes
     guestallowed: number;
     squarefootage: number;
-    checkingin: string;
-    privatespace: string;
-    parking_size: string;
-    restroompool: string[];
-    shower: string;
-    shower_room: string;
-    wifi: string;
-    disabilities: string;
-    alcohol: string;
-    smoking: string;
-    loud_music: string;
-    nudity: string;
-    third_party_vendors: string;
-    security_camera: string;
-    guestRequirement: string;
-    cancellation_policy: string;
-    additional_notes: string;
-    other_perks: string;
-    poolcleanring: string;
-    rooms: number;
-    accessibility: string[];
-    what_to_bring: string;
+    transportation: string;       // free text
+    cancellation_policy: string;  // free text
+    poolcleanring: string;        // free text (real prod key, typo preserved)
+    additional_notes: string;     // free text
   };
   location: {
     address: string;
@@ -122,42 +108,28 @@ export interface ListingDraft {
 
 export const DEFAULT_DRAFT: ListingDraft = {
   listingType: "hourly-pool",
-  category: "",
-  subcategory: [],
+  category: "pool",
+  subcategory: "",
   title: "",
   images: [],
   videoUrl: "",
+  importedPhotos: [],
+  photoRightsConfirmed: false,
   description: "",
   publicData: {
     space: [],
-    safety: [],
-    outdoor_kitchen: [],
-    pool_depth: "",
+    poolAmenities: [],
     water_type: "",
+    checkingin: "",
+    parking_size: "",
+    accessibility: [],
+    houseRules: [],
     guestallowed: 10,
     squarefootage: 500,
-    checkingin: "",
-    privatespace: "",
-    parking_size: "",
-    restroompool: [],
-    shower: "",
-    shower_room: "",
-    wifi: "",
-    disabilities: "",
-    alcohol: "BYOB only",
-    smoking: "Not allowed",
-    loud_music: "Quiet hours after 9pm",
-    nudity: "Swimwear required",
-    third_party_vendors: "Pre-approval required",
-    security_camera: "None",
-    guestRequirement: "",
+    transportation: "",
     cancellation_policy: "",
-    additional_notes: "",
-    other_perks: "",
     poolcleanring: "",
-    rooms: 0,
-    accessibility: [],
-    what_to_bring: "",
+    additional_notes: "",
   },
   location: { address: "", building: "", city: "", state: "", zip: "", lat: null, lng: null },
   pricing: {

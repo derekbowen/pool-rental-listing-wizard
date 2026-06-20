@@ -64,7 +64,7 @@ export default function ListingCard({
         )}
 
         {/* Price badge — bottom left (Swimply-style teal) */}
-        <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-cyan-600 rounded-lg shadow-md">
+        <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-sky-600 rounded-lg shadow-md">
           <span className="text-white font-bold text-sm">
             ${(pricePerHour / 100).toFixed(0)}
           </span>
@@ -73,7 +73,7 @@ export default function ListingCard({
         {/* Distance badge — top left */}
         {distance && (
           <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-sm">
-            <MapPin className="w-3 h-3 text-cyan-600" />
+            <MapPin className="w-3 h-3 text-sky-600" />
             <span className="text-xs font-semibold text-slate-700">
               {distance}
             </span>
@@ -172,7 +172,7 @@ export default function ListingCard({
         {/* Tags row */}
         <div className="flex items-center gap-2 pt-0.5">
           {category && (
-            <span className="px-2 py-0.5 bg-cyan-50 text-cyan-700 rounded-full text-[10px] font-semibold">
+            <span className="px-2 py-0.5 bg-sky-50 text-sky-700 rounded-full text-[10px] font-semibold">
               {category}
             </span>
           )}

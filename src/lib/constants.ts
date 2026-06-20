@@ -3,6 +3,8 @@
 // All IDs map directly to Sharetribe listing field system
 // ============================================================
 
+import { CATEGORY_L2 } from "./sharetribe-fields";
+
 export const LISTING_TYPES = [
   {
     id: "hourly-pool" as const,
@@ -26,60 +28,17 @@ export const LISTING_TYPES = [
 
 export type ListingTypeId = (typeof LISTING_TYPES)[number]["id"];
 
+// Categories mirror the production listing-categories.json (codes as ids).
 export const CATEGORIES = [
-  { id: "pool", label: "Private Pool", icon: "Waves" },
-  { id: "eventvenus", label: "Event Venue", icon: "PartyPopper" },
+  { id: "pool", label: "Pool", icon: "Waves" },
   { id: "backyards", label: "Backyard", icon: "Home" },
-  { id: "privatehomes", label: "Private Home", icon: "Building" },
-  { id: "sportciourt", label: "Sports Court", icon: "Trophy" },
-  { id: "experiences", label: "Experience", icon: "Sparkles" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
 
-export const SUBCATEGORIES: Record<string, string[]> = {
-  pool: [
-    "Private Pool",
-    "Indoor Pools",
-    "Heated Pools",
-    "Hot Tubs",
-    "Cold Plunge Pools",
-    "Public Pool",
-    "Family Friendly Pools",
-    "Dog Friendly",
-    "Night Swimming Pools",
-    "Pool for Swim Lessons",
-  ],
-  eventvenus: [
-    "Anniversary Parties",
-    "Baby Showers",
-    "Bachelorette Parties",
-    "Bar/Bat Mitzvahs",
-    "Corporate Parties",
-    "Graduation Parties",
-    "Photoshoots",
-    "Video Shoots",
-  ],
-  sportciourt: [
-    "Pickleball Courts",
-    "Tennis Courts",
-    "Basketball Courts",
-    "Golf Course",
-  ],
-  experiences: [
-    "Food & Drink",
-    "Adventure",
-    "Art & Culture",
-    "Nature & Wildlife",
-    "Music & Entertainment",
-    "Wellness",
-    "Sports",
-    "Unique Experiences",
-    "Everything Else",
-  ],
-  backyards: [],
-  privatehomes: [],
-};
+// categoryLevel2 options keyed by category code — sourced from the authoritative
+// production config (see sharetribe-fields.ts). Each option is { code, label }.
+export const SUBCATEGORIES = CATEGORY_L2;
 
 // Step 3 — Feature chips (multi-select, AI pre-fills these)
 export const SPACE_FEATURES = [

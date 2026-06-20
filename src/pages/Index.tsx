@@ -18,7 +18,7 @@ function PageRouter() {
             <h1 className="text-2xl font-bold text-slate-800">Search Results Preview</h1>
             <button
               onClick={() => setPage("wizard")}
-              className="text-sm text-cyan-600 hover:text-cyan-700 font-medium"
+              className="text-sm text-sky-600 hover:text-sky-700 font-medium"
             >
               Back to Editor
             </button>

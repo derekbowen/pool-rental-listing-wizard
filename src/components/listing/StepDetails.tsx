@@ -4,19 +4,15 @@ import { MOCK_AI_RESULTS } from "@/lib/mockData";
 import { analyzeListingPhotos, type AIListingResult } from "@/lib/ai";
 import AddressAutocomplete, { LocationMapPreview } from "./AddressAutocomplete";
 import {
-  SPACE_FEATURES,
-  SAFETY_FEATURES,
-  OUTDOOR_KITCHEN_OPTIONS,
-  POOL_DEPTHS,
-  WATER_TYPES,
-  CHECKIN_STYLES,
-  SPACE_TYPES,
-  PARKING_OPTIONS,
-  RESTROOM_OPTIONS,
-  YES_NO,
-  ADA_OPTIONS,
-  POLICIES,
-} from "@/lib/constants";
+  SPACE_ACTIVITIES,
+  POOL_AMENITIES,
+  WATER_TYPE_OPTIONS,
+  CHECKIN_OPTIONS,
+  PARKING_SIZE_OPTIONS,
+  ACCESSIBILITY_OPTIONS,
+  HOUSE_RULES_OPTIONS,
+  type FieldOption,
+} from "@/lib/sharetribe-fields";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -113,7 +109,7 @@ function AILoadingState({ status }: { status: "loading" | "done" | "error" }) {
 
       {/* Timer */}
       <div className="text-center">
-        <div className="text-4xl font-mono font-bold text-cyan-700 tabular-nums">
+        <div className="text-4xl font-mono font-bold text-sky-700 tabular-nums">
           {timeStr}
         </div>
         <p className="mt-1 text-sm text-slate-400">
@@ -162,7 +158,7 @@ function ChipToggle({
       className={cn(
         "px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 active:scale-95",
         active
-          ? "bg-cyan-500 text-white shadow-sm"
+          ? "bg-sky-500 text-white shadow-sm"
           : "bg-slate-100 text-slate-500 hover:bg-slate-200",
       )}
     >
@@ -179,7 +175,7 @@ function SegmentedSelect({
   onChange,
 }: {
   label: string;
-  options: string[];
+  options: FieldOption[];
   value: string;
   onChange: (v: string) => void;
 }) {
@@ -191,16 +187,16 @@ function SegmentedSelect({
       <div className="flex flex-wrap gap-1.5">
         {options.map((opt) => (
           <button
-            key={opt}
-            onClick={() => onChange(opt)}
+            key={opt.code}
+            onClick={() => onChange(opt.code)}
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-95",
-              value === opt
-                ? "bg-cyan-500 text-white"
+              value === opt.code
+                ? "bg-sky-500 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200",
             )}
           >
-            {opt}
+            {opt.label}
           </button>
         ))}
       </div>
@@ -228,14 +224,14 @@ function NumberStepper({
       <div className="flex items-center gap-3">
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+          className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
         >
           <Minus className="w-3 h-3" />
         </button>
         <span className="text-lg font-semibold w-10 text-center">{value}</span>
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center hover:border-cyan-500 transition-colors"
+          className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center hover:border-sky-500 transition-colors"
         >
           <Plus className="w-3 h-3" />
         </button>
@@ -274,7 +270,7 @@ function MultiSegmentedSelect({
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-95",
               value.includes(opt)
-                ? "bg-cyan-500 text-white"
+                ? "bg-sky-500 text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200",
             )}
           >
@@ -297,29 +293,20 @@ export default function StepDetails() {
   const [aiError, setAiError] = useState<string | null>(null);
 
   const applyResults = useCallback((results: AIListingResult) => {
-    updateDraft({ description: results.description });
+    updateDraft({
+      description: results.description,
+      ...(results.categoryLevel2 ? { subcategory: results.categoryLevel2 } : {}),
+    });
     updatePublicData({
-      space: results.space,
-      safety: results.safety,
-      outdoor_kitchen: results.outdoor_kitchen,
-      pool_depth: results.pool_depth,
-      water_type: results.water_type,
+      space: results.space ?? [],
+      poolAmenities: results.poolAmenities ?? [],
+      water_type: results.water_type ?? "",
+      checkingin: results.checkingin ?? "",
+      parking_size: results.parking_size ?? "",
+      accessibility: results.accessibility ?? [],
+      houseRules: results.houseRules ?? [],
       guestallowed: results.guestallowed,
       squarefootage: results.squarefootage,
-      checkingin: results.checkingin,
-      privatespace: results.privatespace,
-      parking_size: results.parking_size,
-      restroompool: results.restroompool,
-      shower: results.shower,
-      shower_room: results.shower_room,
-      wifi: results.wifi,
-      disabilities: results.disabilities,
-      alcohol: results.alcohol,
-      smoking: results.smoking,
-      loud_music: results.loud_music,
-      nudity: results.nudity,
-      third_party_vendors: results.third_party_vendors,
-      security_camera: results.security_camera,
     });
     setAiCompleted(true);
   }, [updateDraft, updatePublicData, setAiCompleted]);
@@ -364,7 +351,7 @@ export default function StepDetails() {
     return (
       <div className="py-8">
         <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-cyan-900">
+          <h1 className="text-3xl font-bold text-sky-900">
             Sit back — we're building your listing
           </h1>
           <p className="mt-2 text-slate-500">
@@ -392,7 +379,7 @@ export default function StepDetails() {
   return (
     <div className="py-8 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-cyan-900">Looking great!</h1>
+        <h1 className="text-3xl font-bold text-sky-900">Looking great!</h1>
         <p className="mt-2 text-slate-500">
           Review what our AI detected — tap chips to adjust
         </p>
@@ -413,7 +400,7 @@ export default function StepDetails() {
           <div className="flex gap-2">
             <button
               onClick={() => setEditingDescription(!editingDescription)}
-              className="flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700"
+              className="flex items-center gap-1 text-xs text-sky-600 hover:text-sky-700"
             >
               <Pencil className="w-3 h-3" />
               {editingDescription ? "Done" : "Edit"}
@@ -436,7 +423,7 @@ export default function StepDetails() {
             value={draft.description}
             onChange={(e) => updateDraft({ description: e.target.value })}
             rows={6}
-            className="w-full px-4 py-3 border-2 border-cyan-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm leading-relaxed"
+            className="w-full px-4 py-3 border-2 border-sky-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none transition-all text-sm leading-relaxed"
           />
         ) : (
           <div className="px-4 py-3 bg-slate-50 rounded-xl text-sm text-slate-700 leading-relaxed whitespace-pre-line">
@@ -445,52 +432,52 @@ export default function StepDetails() {
         )}
       </section>
 
-      {/* Feature chips — Space */}
+      {/* What's it good for? (space = activities) */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">
-          Space Features & Amenities
+          What's it good for?
         </h2>
         <div className="flex flex-wrap gap-2">
-          {SPACE_FEATURES.map((feat) => (
+          {SPACE_ACTIVITIES.map((o) => (
             <ChipToggle
-              key={feat}
-              label={feat}
-              active={draft.publicData.space.includes(feat)}
-              onClick={() => toggleArrayField("space", feat)}
+              key={o.code}
+              label={o.label}
+              active={draft.publicData.space.includes(o.code)}
+              onClick={() => toggleArrayField("space", o.code)}
             />
           ))}
         </div>
       </section>
 
-      {/* Feature chips — Safety */}
+      {/* Amenities (poolAmenities) */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">
-          Safety Features
+          Amenities
         </h2>
         <div className="flex flex-wrap gap-2">
-          {SAFETY_FEATURES.map((feat) => (
+          {POOL_AMENITIES.map((o) => (
             <ChipToggle
-              key={feat}
-              label={feat}
-              active={draft.publicData.safety.includes(feat)}
-              onClick={() => toggleArrayField("safety", feat)}
+              key={o.code}
+              label={o.label}
+              active={draft.publicData.poolAmenities.includes(o.code)}
+              onClick={() => toggleArrayField("poolAmenities", o.code)}
             />
           ))}
         </div>
       </section>
 
-      {/* Feature chips — Outdoor Kitchen */}
+      {/* Accessibility */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">
-          Outdoor Kitchen & Bar
+          Accessibility
         </h2>
         <div className="flex flex-wrap gap-2">
-          {OUTDOOR_KITCHEN_OPTIONS.map((feat) => (
+          {ACCESSIBILITY_OPTIONS.map((o) => (
             <ChipToggle
-              key={feat}
-              label={feat}
-              active={draft.publicData.outdoor_kitchen.includes(feat)}
-              onClick={() => toggleArrayField("outdoor_kitchen", feat)}
+              key={o.code}
+              label={o.label}
+              active={draft.publicData.accessibility.includes(o.code)}
+              onClick={() => toggleArrayField("accessibility", o.code)}
             />
           ))}
         </div>
@@ -502,16 +489,22 @@ export default function StepDetails() {
           Pool Details
         </h2>
         <SegmentedSelect
-          label="Pool Depth"
-          options={POOL_DEPTHS}
-          value={draft.publicData.pool_depth}
-          onChange={(v) => updatePublicData({ pool_depth: v })}
-        />
-        <SegmentedSelect
           label="Water Type"
-          options={WATER_TYPES}
+          options={WATER_TYPE_OPTIONS}
           value={draft.publicData.water_type}
           onChange={(v) => updatePublicData({ water_type: v })}
+        />
+        <SegmentedSelect
+          label="Check-in"
+          options={CHECKIN_OPTIONS}
+          value={draft.publicData.checkingin}
+          onChange={(v) => updatePublicData({ checkingin: v })}
+        />
+        <SegmentedSelect
+          label="Parking"
+          options={PARKING_SIZE_OPTIONS}
+          value={draft.publicData.parking_size}
+          onChange={(v) => updatePublicData({ parking_size: v })}
         />
         <NumberStepper
           label="Max Guests"
@@ -527,61 +520,13 @@ export default function StepDetails() {
           min={100}
           max={10000}
         />
-        <SegmentedSelect
-          label="Check-in Style"
-          options={CHECKIN_STYLES}
-          value={draft.publicData.checkingin}
-          onChange={(v) => updatePublicData({ checkingin: v })}
-        />
-        <SegmentedSelect
-          label="Space Type"
-          options={SPACE_TYPES}
-          value={draft.publicData.privatespace}
-          onChange={(v) => updatePublicData({ privatespace: v })}
-        />
-        <SegmentedSelect
-          label="Parking"
-          options={PARKING_OPTIONS}
-          value={draft.publicData.parking_size}
-          onChange={(v) => updatePublicData({ parking_size: v })}
-        />
-        <MultiSegmentedSelect
-          label="Restrooms"
-          options={RESTROOM_OPTIONS}
-          value={draft.publicData.restroompool}
-          onChange={(v) => updatePublicData({ restroompool: v })}
-        />
-        <SegmentedSelect
-          label="Shower"
-          options={YES_NO}
-          value={draft.publicData.shower}
-          onChange={(v) => updatePublicData({ shower: v })}
-        />
-        <SegmentedSelect
-          label="Changing Rooms"
-          options={YES_NO}
-          value={draft.publicData.shower_room}
-          onChange={(v) => updatePublicData({ shower_room: v })}
-        />
-        <SegmentedSelect
-          label="WiFi"
-          options={YES_NO}
-          value={draft.publicData.wifi}
-          onChange={(v) => updatePublicData({ wifi: v })}
-        />
-        <SegmentedSelect
-          label="ADA Accessible"
-          options={ADA_OPTIONS}
-          value={draft.publicData.disabilities}
-          onChange={(v) => updatePublicData({ disabilities: v })}
-        />
       </section>
 
       {/* Policies (collapsible) */}
       <section className="space-y-3">
         <button
           onClick={() => setShowPolicies(!showPolicies)}
-          className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-cyan-700 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-sky-700 transition-colors"
         >
           {showPolicies ? (
             <ChevronUp className="w-4 h-4" />
@@ -592,43 +537,15 @@ export default function StepDetails() {
           <span className="text-xs font-normal text-slate-400">(defaults applied)</span>
         </button>
         {showPolicies && (
-          <div className="space-y-1 pl-1 animate-in fade-in slide-in-from-top-2 duration-200">
-            {POLICIES.map((policy) => {
-              const Icon = POLICY_ICONS[policy.icon];
-              return (
-                <div
-                  key={policy.id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 border-b border-slate-100"
-                >
-                  <div className="flex items-center gap-2 sm:w-36 flex-shrink-0">
-                    {Icon && <Icon className="w-4 h-4 text-slate-400" />}
-                    <span className="text-sm font-medium text-slate-700">
-                      {policy.label}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {policy.options.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() =>
-                          updatePublicData({
-                            [policy.id]: opt,
-                          } as any)
-                        }
-                        className={cn(
-                          "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-95",
-                          (draft.publicData as any)[policy.id] === opt
-                            ? "bg-cyan-500 text-white"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex flex-wrap gap-2 pl-1 animate-in fade-in slide-in-from-top-2 duration-200">
+            {HOUSE_RULES_OPTIONS.map((o) => (
+              <ChipToggle
+                key={o.code}
+                label={o.label}
+                active={draft.publicData.houseRules.includes(o.code)}
+                onClick={() => toggleArrayField("houseRules", o.code)}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -657,7 +574,7 @@ export default function StepDetails() {
           value={draft.location.building}
           onChange={(e) => updateLocation({ building: e.target.value })}
           placeholder="Apt, suite, building # (optional)"
-          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm"
+          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none transition-all text-sm"
         />
         {draft.location.lat && (
           <LocationMapPreview
@@ -666,6 +583,11 @@ export default function StepDetails() {
             city={draft.location.city}
             state={draft.location.state}
           />
+        )}
+        {!(draft.location.lat != null && draft.location.lng != null) && (
+          <p className="text-xs text-amber-600">
+            Pick your address from the dropdown so it's pinned on the map — required to publish.
+          </p>
         )}
       </section>
 
@@ -679,7 +601,12 @@ export default function StepDetails() {
         </button>
         <button
           onClick={next}
-          className="flex-1 py-4 rounded-xl text-lg font-semibold bg-cyan-500 text-white hover:bg-cyan-600 active:scale-[0.98] shadow-lg shadow-cyan-200 transition-all duration-200"
+          disabled={!(draft.location.address && draft.location.lat != null && draft.location.lng != null)}
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all duration-200 ${
+            draft.location.address && draft.location.lat != null && draft.location.lng != null
+              ? "bg-sky-500 text-white hover:bg-sky-600 active:scale-[0.98] shadow-lg shadow-sky-200"
+              : "bg-slate-200 text-slate-400 cursor-not-allowed"
+          }`}
         >
           Next: Set Your Pricing →
         </button>
@@ -693,7 +620,7 @@ export default function StepDetails() {
             next();
             setTimeout(() => next(), 0);
           }}
-          className="text-sm text-slate-400 hover:text-cyan-600 transition-colors"
+          className="text-sm text-slate-400 hover:text-sky-600 transition-colors"
         >
           Looks good, skip to publish →
         </button>

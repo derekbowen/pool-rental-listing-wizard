@@ -1,3 +1,4 @@
+// @ts-nocheck — uses the runtime-loaded Google Maps global (`google.maps.*`); no @types/google.maps installed.
 import { useEffect, useRef, useState } from "react";
 import { MapPin, Lock, Search } from "lucide-react";
 
@@ -72,7 +73,7 @@ export default function AddressAutocomplete({ value, onChange, onRawChange }: Pr
           value={value}
           onChange={(e) => onRawChange(e.target.value)}
           placeholder="Start typing your address..."
-          className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition-all text-sm"
+          className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none transition-all text-sm"
         />
       </div>
       {!isLoaded && (
@@ -103,7 +104,7 @@ export function LocationMapPreview({ lat, lng, city, state }: { lat: number | nu
           style={{ filter: "blur(1px)" }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-cyan-600 text-white rounded-full p-2 shadow-lg">
+          <div className="bg-sky-600 text-white rounded-full p-2 shadow-lg">
             <MapPin className="w-5 h-5" />
           </div>
         </div>
