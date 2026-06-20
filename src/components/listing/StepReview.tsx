@@ -197,7 +197,7 @@ export default function StepReview() {
     }
     let user = await getCurrentUser();
     if (!user) {
-      await authPopup("signup");
+      await authPopup("login");
       user = await getCurrentUser();
       if (!user) {
         setPublishError("Please sign in to publish your listing.");
