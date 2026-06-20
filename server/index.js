@@ -12,16 +12,27 @@ const MP_BASE = "https://flex-api.sharetribe.com"; // Marketplace API (verify ho
 // Verify a marketplace access token (from the shared session cookie) -> the host.
 async function userFromToken(req) {
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!token) return null;
+  if (!token) {
+    console.error("[auth] no Bearer token on request — host not signed in (or SSO cookie not read).");
+    return null;
+  }
   try {
     const r = await fetch(`${MP_BASE}/v1/api/current_user/show`, { headers: { Authorization: "Bearer " + token } });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      // Most common real failure: the SSO cookie held an ANONYMOUS or EXPIRED token.
+      console.error(`[auth] Marketplace rejected the session token HTTP ${r.status} (anonymous/expired token?).`);
+      return null;
+    }
     const j = await r.json().catch(() => ({}));
     const id = j.data && (j.data.id?.uuid || j.data.id);
-    if (!id) return null;
+    if (!id) {
+      console.error("[auth] token accepted but resolved to NO user id (anonymous app token, not a logged-in host).");
+      return null;
+    }
     const name = (j.data.attributes && j.data.attributes.profile && (j.data.attributes.profile.displayName || j.data.attributes.profile.firstName)) || "";
     return { sub: id, name };
-  } catch {
+  } catch (e) {
+    console.error("[auth] current_user/show network error:", e.message);
     return null;
   }
 }
@@ -42,8 +53,27 @@ async function getToken() {
       scope: "integ",
     }),
   });
-  if (!res.ok) throw new Error(`Auth failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[getToken] Integration API auth FAILED HTTP ${res.status}: ${body.slice(0, 400)} — check SHARETRIBE_CLI_API_KEY/SECRET in merlin.env`);
+    throw new Error(`Auth failed: ${res.status} ${body}`);
+  }
   return (await res.json()).access_token;
+}
+
+// Print the FULL Sharetribe JSON:API error array (status, code, title, source/details)
+// so a rejected write names the bad attribute instead of failing silently.
+function logStErrors(tag, status, data) {
+  const errs = (data && data.errors) || [];
+  console.error(`[${tag}] Sharetribe REJECTED — HTTP ${status}`);
+  for (const e of errs) {
+    console.error(
+      `  - ${e.status || ""} ${e.code || ""} :: ${e.title || ""}` +
+        (e.source ? ` :: source=${JSON.stringify(e.source)}` : "") +
+        (e.details ? ` :: details=${JSON.stringify(e.details)}` : ""),
+    );
+  }
+  if (!errs.length) console.error("  raw:", JSON.stringify(data).slice(0, 1500));
 }
 
 async function proxyToSharetribe(endpoint, body) {
@@ -56,7 +86,9 @@ async function proxyToSharetribe(endpoint, body) {
     },
     body: JSON.stringify(body),
   });
-  return { status: res.status, data: await res.json() };
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) logStErrors(endpoint, res.status, data);
+  return { status: res.status, data };
 }
 
 app.use(express.json({ limit: "80mb" }));
@@ -70,14 +102,25 @@ app.get("/wizard/api/auth/me", async (req, res) => {
 
 app.post("/wizard/api/sharetribe/create-listing", async (req, res) => {
   const u = await userFromToken(req);
-  if (!u) return res.status(401).json({ error: "Please sign in to publish your listing." });
+  if (!u) {
+    // BLOCKED before Sharetribe: the host's marketplace session token was missing/invalid.
+    console.error("[create-listing] BLOCKED (auth): no valid host session — 401, nothing sent to Sharetribe.");
+    return res.status(401).json({ error: "Please sign in to publish your listing." });
+  }
   try {
     // Author is the verified host from the marketplace session — never trust a client-supplied authorId.
     const body = { ...req.body, authorId: u.sub };
     const result = await proxyToSharetribe("listings/create", body);
+    if (result.status >= 400) {
+      // NOTE: there is NO local validation gate — a failure here is a Sharetribe REJECT (logged above), not a block by us.
+      console.error(`[create-listing] FAILED for host ${u.sub} (HTTP ${result.status}) — Sharetribe reject, see errors above.`);
+    } else {
+      const id = result.data?.data?.id?.uuid || result.data?.data?.id;
+      console.log(`[create-listing] OK host=${u.sub} listing=${id} title=${JSON.stringify(req.body?.title)}`);
+    }
     res.status(result.status).json(result.data);
   } catch (err) {
-    console.error("[create-listing]", err.message);
+    console.error("[create-listing] NETWORK/EXCEPTION:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -160,7 +203,10 @@ async function uploadBufferToSharetribe(token, buf, ct) {
     body: fd,
   });
   const uj = await up.json().catch(() => ({}));
-  if (!up.ok) return null;
+  if (!up.ok) {
+    console.error(`[upload-images] image upload REJECTED HTTP ${up.status}:`, JSON.stringify(uj).slice(0, 500));
+    return null;
+  }
   return (uj.data && (uj.data.id?.uuid || uj.data.id)) || null;
 }
 
@@ -183,8 +229,8 @@ app.post("/wizard/api/sharetribe/upload-images", async (req, res) => {
         if (buf.length === 0 || buf.length > 20 * 1024 * 1024) continue;
         const id = await uploadBufferToSharetribe(token, buf, m[1]);
         if (id) imageIds.push(id);
-      } catch {
-        // skip
+      } catch (e) {
+        console.error("[upload-images] host-file upload error:", e.message);
       }
     }
     // Then imported photos by URL
@@ -198,10 +244,11 @@ app.post("/wizard/api/sharetribe/upload-images", async (req, res) => {
         if (buf.length === 0 || buf.length > 20 * 1024 * 1024) continue;
         const id = await uploadBufferToSharetribe(token, buf, ct);
         if (id) imageIds.push(id);
-      } catch {
-        // skip
+      } catch (e) {
+        console.error("[upload-images] url upload error:", url, e.message);
       }
     }
+    if (imageIds.length === 0) console.error("[upload-images] WARNING: 0 of", (files.length + urls.length), "images uploaded successfully.");
     res.json({ ok: true, imageIds });
   } catch (err) {
     console.error("[upload-images]", err.message);
